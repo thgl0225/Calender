@@ -17,18 +17,13 @@
         <div id="calendar-grid"></div>
     </div>
 
-    <div id="todo-area">
-        <h4 id="todo-title"></h4>
-        <ul id="todo-list"></ul>
-    </div>
-
     <div id="action-bar">
-        <button id="add-todo-btn">➕ 할 일 추가</button>
+        <button id="add-todo-btn" title="할 일 추가">➕</button>
         <div id="theme-selector">
-            <button class="theme-btn" data-theme="default">⚪</button>
-            <button class="theme-btn" data-theme="cute">💖</button>
-            <button class="theme-btn" data-theme="calm">🤎</button>
-            <button class="theme-btn" data-theme="mono">⚫</button>
+            <button class="theme-btn" data-theme="default" title="기본">⚪</button>
+            <button class="theme-btn" data-theme="cute" title="러블리">💖</button>
+            <button class="theme-btn" data-theme="calm" title="차분한">🤎</button>
+            <button class="theme-btn" data-theme="mono" title="모노">⚫</button>
         </div>
     </div>
 </div>
@@ -50,6 +45,8 @@
         <button id="save-todo-btn">저장</button>
     </div>
 </div>
+
+<div id="todo-tooltip" style="display:none;"></div>
 
 <script src="script.js"></script>
 </body>
