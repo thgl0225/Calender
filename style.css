@@ -12,12 +12,13 @@ body.calm { --main-bg:#f5f0e1; --btn-color:#d9b48f; --selected:#d9b48f; --dot-co
 body.mono { --main-bg:#f0f0f0; --btn-color:#555555; --selected:#555555; --dot-color:#222; --dot-size: 6px; }
 
 #widget-container {
-    width:260px; /* 전체 크기 축소 */
+    width:300px; /* 크기 증가 (정사각형 형태 유도) */
     background: var(--main-bg);
     padding:10px;
     border-radius:8px;
     box-shadow:0 1px 3px rgba(0,0,0,0.1);
     position: relative;
+    /* 캘린더 영역 외에 팝업이 뜨지 않도록 overflow: hidden; 설정 가능 */
 }
 
 #calendar-header {
@@ -32,56 +33,62 @@ body.mono { --main-bg:#f0f0f0; --btn-color:#555555; --selected:#555555; --dot-co
 }
 #calendar-header button:hover { opacity:0.8; }
 
+/* 캘린더 그리드 가독성 개선 */
 #calendar-grid {
     display:grid;
     grid-template-columns:repeat(7,1fr);
-    gap:2px;
+    gap: 3px; /* 간격 확장 */
     text-align:center;
-    font-size:0.85em;
+    font-size:0.9em; /* 글꼴 크기 약간 확대 */
 }
 .day-cell { 
-    padding:5px 0; 
+    padding: 3px 0; /* 세로 패딩 축소 */
     cursor:pointer; 
     border-radius:4px; 
     position:relative; 
-    height: 30px; /* 크기 조정에 따라 날짜 셀 높이 고정 */
+    height: 35px; /* 높이 증가로 정사각형 형태에 가깝게 조정 */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
 }
-.day-cell.header { font-weight:bold; }
+.day-cell.header { 
+    font-weight:bold; 
+    padding-bottom: 8px; /* 요일 헤더 아래 간격 확보 */
+}
 
 /* 주말 색상 */
 .day-cell.sunday, .day-cell.header:first-child { color:red; }
 .day-cell.saturday, .day-cell.header:last-child { color:blue; }
 
 .day-cell.today { font-weight:bold; background:#d1e7ff; }
+.day-cell:not(.header):hover { /* 호버 효과 추가 */
+    background-color: #f0f0f0; 
+}
 .day-cell.selected { 
     background:var(--selected); 
     color:white !important; 
 }
+
 /* 할 일 점 스타일 및 간격 조정 */
 .day-cell .todo-dot { 
     width:var(--dot-size); height:var(--dot-size); 
     background:var(--dot-color); 
     border-radius:50%; 
     position:absolute; 
-    bottom: 3px; /* 날짜와의 간격 */
+    bottom: 5px; /* 날짜와의 간격 넓힘 */
     left:50%; 
     transform:translateX(-50%); 
 }
 
-/* 할 일 영역 제거됨 */
-
-/* 액션 바: 할 일 추가 버튼과 테마 선택 버튼 배치 */
+/* 액션 바: 버튼 순서 변경을 위해 justify-content: space-between 유지 */
 #action-bar { 
     display:flex; 
-    justify-content: space-between; /* 양쪽 끝으로 배치 */
+    justify-content: space-between; 
     align-items:center; 
     gap:5px; 
     margin-top:10px; 
-    border-top: 1px solid #eee; /* 구분선 추가 */
+    border-top: 1px solid #eee; 
     padding-top: 5px;
 }
 #add-todo-btn { 
@@ -100,25 +107,31 @@ body.mono { --main-bg:#f0f0f0; --btn-color:#555555; --selected:#555555; --dot-co
 #theme-selector button:hover { opacity:0.8; }
 
 
-/* --- 팝업 (Tooltip) 스타일 --- */
+/* --- 팝업 (Tooltip) 스타일: 위젯 중앙 고정 --- */
 #todo-tooltip {
-    position: absolute;
+    /* 팝업 중앙 고정을 위한 설정 */
+    display: none; /* JS에서 block/none 처리 */
+    position: absolute; 
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 1001;
     background: #fff;
     border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    width: 200px; /* 팝업 너비 */
-    pointer-events: none; /* Tooltip 위에 커서가 있어도 아래 요소에 이벤트 전달 */
+    border-radius: 8px; /* 둥근 모서리 */
+    padding: 15px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    width: 240px; /* 팝업 너비 증가 */
+    pointer-events: auto; /* 내용 클릭 허용 */
 }
 #todo-tooltip.visible {
     display: block !important;
-    pointer-events: auto; /* 내용 클릭을 허용하여 닫기/체크박스 기능 활성화 */
 }
+
+/* 팝업 내용 스타일 */
 #todo-tooltip h5 {
-    margin: 0 0 8px 0;
-    font-size: 0.9em;
+    margin: 0 0 10px 0;
+    font-size: 1em;
     border-bottom: 1px solid #eee;
     padding-bottom: 5px;
     font-weight: bold;
@@ -127,15 +140,24 @@ body.mono { --main-bg:#f0f0f0; --btn-color:#555555; --selected:#555555; --dot-co
     list-style: none;
     padding: 0;
     margin: 0;
-    font-size: 0.8em;
+    max-height: 200px; /* 최대 높이 지정 */
+    overflow-y: auto; /* 스크롤 가능 */
 }
 #todo-tooltip li {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 4px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 3px 0;
+    font-size: 0.9em;
+}
+#todo-tooltip .todo-info {
+    display: flex;
+    align-items: flex-start;
+    flex-grow: 1;
 }
 #todo-tooltip input[type="checkbox"] {
-    margin-right: 5px;
+    margin-right: 8px;
     flex-shrink: 0;
     margin-top: 2px;
 }
@@ -145,15 +167,19 @@ body.mono { --main-bg:#f0f0f0; --btn-color:#555555; --selected:#555555; --dot-co
 }
 #todo-tooltip .priority {
     margin-left: 5px;
+    font-size: 0.8em;
     flex-shrink: 0;
 }
-
+#todo-tooltip button {
+    font-size: 0.8em;
+    margin-left: 5px;
+}
 
 /* 모달 스타일 (이전과 동일) */
 .modal { 
     display:none; 
     position:fixed; 
-    z-index:1000; 
+    z-index:2000; /* Tooltip보다 위에 뜨도록 z-index 증가 */
     left:0; top:0; 
     width:100%; height:100%; 
     background:rgba(0,0,0,0.4); 
