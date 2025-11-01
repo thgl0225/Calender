@@ -20,22 +20,6 @@
             <h1>📅 투두 캘린더</h1>
         </div>
 
-        <!-- 통계 정보 -->
-        <div class="stats">
-            <div class="stat-item">
-                <span class="emoji">🔥</span>
-                <span id="streak-count">0일</span>
-            </div>
-            <div class="stat-item">
-                <span class="emoji">✅</span>
-                <span id="total-completed">0개</span>
-            </div>
-            <div class="stat-item">
-                <span class="emoji">📝</span>
-                <span id="month-todos">0개</span>
-            </div>
-        </div>
-
         <div class="controls">
             <button class="nav-btn" id="prev-month">◀</button>
             <span id="current-month-year"></span>
@@ -50,6 +34,22 @@
 
     <!-- 투두 팝업 -->
     <div id="todo-tooltip"></div>
+
+    <!-- 날짜 선택 모달 -->
+    <div id="date-picker-modal">
+        <div class="date-picker-content">
+            <h3>날짜 선택</h3>
+            <div class="year-month-selector">
+                <button id="prev-year">◀◀</button>
+                <button id="prev-picker-month">◀</button>
+                <span id="picker-month-year"></span>
+                <button id="next-picker-month">▶</button>
+                <button id="next-year">▶▶</button>
+            </div>
+            <div id="date-picker-grid"></div>
+            <button class="close-picker-btn">닫기</button>
+        </div>
+    </div>
 
     <!-- 추가/수정 모달 -->
     <div id="add-todo-modal">
