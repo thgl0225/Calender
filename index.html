@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- 테마 선택기 - 작고 눈에 안띄게 -->
+        <!-- 테마 선택기 -->
         <div class="theme-selector">
             <button class="theme-btn" data-theme="white" title="화이트"></button>
             <button class="theme-btn" data-theme="black" title="블랙"></button>
@@ -24,25 +24,23 @@
         <div class="stats">
             <div class="stat-item">
                 <span class="emoji">🔥</span>
-                <span id="streak-count">연속 0일</span>
+                <span id="streak-count">0일</span>
             </div>
             <div class="stat-item">
                 <span class="emoji">✅</span>
-                <span id="total-completed">완료 0개</span>
+                <span id="total-completed">0개</span>
             </div>
             <div class="stat-item">
                 <span class="emoji">📝</span>
-                <span id="month-todos">이번 달 0개</span>
+                <span id="month-todos">0개</span>
             </div>
         </div>
 
         <div class="controls">
-            <div class="month-nav">
-                <button class="nav-btn" id="prev-month">◀</button>
-                <span id="current-month-year"></span>
-                <button class="nav-btn" id="next-month">▶</button>
-            </div>
-            <button id="add-todo-btn">+ 할 일 추가</button>
+            <button class="nav-btn" id="prev-month">◀</button>
+            <span id="current-month-year"></span>
+            <button class="nav-btn" id="next-month">▶</button>
+            <button id="add-todo-btn">+ 추가</button>
         </div>
 
         <div class="calendar-container">
@@ -53,17 +51,21 @@
     <!-- 투두 팝업 -->
     <div id="todo-tooltip"></div>
 
-    <!-- 추가 모달 -->
+    <!-- 추가/수정 모달 -->
     <div id="add-todo-modal">
         <div class="modal-content">
-            <h3>새 할 일</h3>
+            <h3 id="modal-title">새 할 일</h3>
             <div class="form-group">
                 <label for="todo-date">날짜</label>
                 <input type="date" id="todo-date">
             </div>
             <div class="form-group">
-                <label for="todo-text">내용</label>
-                <textarea id="todo-text" placeholder="할 일을 입력하세요"></textarea>
+                <label for="todo-text">제목</label>
+                <input type="text" id="todo-text" placeholder="할 일 제목">
+            </div>
+            <div class="form-group">
+                <label for="todo-memo">메모 (선택)</label>
+                <textarea id="todo-memo" placeholder="메모를 입력하세요 (선택사항)" rows="2"></textarea>
             </div>
             <div class="form-group">
                 <label for="todo-priority">우선순위</label>
