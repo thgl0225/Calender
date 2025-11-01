@@ -1,5 +1,4 @@
 const calendarGrid = document.getElementById('calendar-grid');
-const calendarContainer = document.querySelector('.calendar-container'); // 캘린더 컨테이너 추가
 const currentMonthYear = document.getElementById('current-month-year');
 const addTodoBtn = document.getElementById('add-todo-btn');
 const modal = document.getElementById('add-todo-modal');
@@ -35,8 +34,6 @@ function hideTooltip() {
     todoTooltip.style.display = 'none';
     todoTooltip.classList.remove('visible');
     todoTooltip.dataset.date = ''; 
-    // 팝업이 닫힐 때, 컨테이너의 position:relative 해제 (CSS에서 이미 처리했으므로 주석 처리)
-    // calendarContainer.style.position = '';
 }
 
 /**
@@ -54,7 +51,6 @@ function showTooltip(dateKey) {
     }
 
     // 팝업 제목을 날짜만 간단하게 표시 (YYYY-MM-DD 형식)
-    // 날짜 키에서 연도-월-일 정보만 사용
     todoTooltip.innerHTML = `<h5>${dateKey} <button id="close-tooltip-btn" style="float:right; border:none; background:none; cursor:pointer; color:#888;">✖</button></h5>`;
     todoTooltip.dataset.date = dateKey;
 
@@ -194,7 +190,7 @@ function renderCalendar(date){
         if(dayOfWeek===0) cell.classList.add('sunday'); 
         if(dayOfWeek===6) cell.classList.add('saturday'); 
 
-        // 🌟 테마별 색상 적용을 위한 'today' 클래스 추가
+        // 🌟 오늘 날짜 스타일: CSS 변수 (--today-bg)에 따라 색상 적용
         if(todayKey===dateKey) cell.classList.add('today');
         
         if(dateToKey(selectedDate)===dateKey) cell.classList.add('selected');
