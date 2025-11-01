@@ -23,9 +23,9 @@ body.black {
 }
 
 body.pink {
-    --theme-primary: #ffb3c6;
-    --theme-secondary: #ff8fab;
-    --theme-light: #ffe4e9;
+    --theme-primary: #ffd4e5;
+    --theme-secondary: #ffb3d9;
+    --theme-light: #fff0f7;
 }
 
 body.brown {
@@ -38,29 +38,29 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: linear-gradient(135deg, var(--theme-light) 0%, var(--theme-primary) 100%);
     min-height: 100vh;
-    padding: 10px;
+    padding: 8px;
     transition: background 0.3s ease;
 }
 
 .container {
-    max-width: 600px;
+    max-width: 420px;
     margin: 0 auto;
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     overflow: hidden;
     position: relative;
 }
 
-/* 테마 선택기 - 작고 눈에 안띄게 */
+/* 테마 선택기 */
 .theme-selector {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
     display: flex;
-    gap: 4px;
+    gap: 3px;
     z-index: 10;
-    opacity: 0.3;
+    opacity: 0.25;
     transition: opacity 0.3s ease;
 }
 
@@ -69,8 +69,8 @@ body {
 }
 
 .theme-btn {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.5);
     cursor: pointer;
@@ -78,97 +78,35 @@ body {
 }
 
 .theme-btn:hover {
-    transform: scale(1.2);
-    border-color: white;
+    transform: scale(1.15);
 }
 
 .theme-btn[data-theme="white"] { background: linear-gradient(135deg, #ffffff 0%, #f5f0eb 100%); border-color: #d4c5b9; }
 .theme-btn[data-theme="black"] { background: linear-gradient(135deg, #3a3a3a 0%, #1f1f1f 100%); }
-.theme-btn[data-theme="pink"] { background: linear-gradient(135deg, #ffb3c6 0%, #ff8fab 100%); }
+.theme-btn[data-theme="pink"] { background: linear-gradient(135deg, #ffd4e5 0%, #ffb3d9 100%); }
 .theme-btn[data-theme="brown"] { background: linear-gradient(135deg, #c9b8a8 0%, #a8958a 100%); }
 
 /* 헤더 */
 .header {
     background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
     color: white;
-    padding: 15px;
+    padding: 12px;
     text-align: center;
 }
 
 body.white .header { color: #5a4a42; }
 
 .header h1 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
-    letter-spacing: -0.5px;
-}
-
-/* 컨트롤 */
-.controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 15px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.month-nav {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.nav-btn {
-    width: 30px;
-    height: 30px;
-    border: none;
-    background: white;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.nav-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-}
-
-#current-month-year {
-    font-size: 15px;
-    font-weight: 600;
-    color: #2d3748;
-    min-width: 100px;
-    text-align: center;
-}
-
-#add-todo-btn {
-    padding: 6px 14px;
-    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(169, 147, 130, 0.3);
-}
-
-body.white #add-todo-btn { color: #5a4a42; }
-
-#add-todo-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(169, 147, 130, 0.4);
+    letter-spacing: -0.3px;
 }
 
 /* 통계 정보 */
 .stats {
     display: flex;
-    gap: 8px;
-    padding: 8px 15px;
+    gap: 6px;
+    padding: 6px 10px;
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
     justify-content: center;
@@ -177,28 +115,86 @@ body.white #add-todo-btn { color: #5a4a42; }
 .stat-item {
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
+    gap: 3px;
+    padding: 3px 8px;
     background: white;
-    border-radius: 6px;
-    font-size: 11px;
+    border-radius: 5px;
+    font-size: 10px;
     font-weight: 600;
     color: #4a5568;
 }
 
 .stat-item .emoji {
+    font-size: 11px;
+}
+
+/* 컨트롤 */
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    gap: 10px;
+}
+
+.nav-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
     font-size: 12px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    flex-shrink: 0;
+}
+
+.nav-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 7px rgba(0,0,0,0.12);
+}
+
+#current-month-year {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d3748;
+    text-align: center;
+    flex: 1;
+}
+
+#add-todo-btn {
+    padding: 5px 12px;
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(169, 147, 130, 0.25);
+    flex-shrink: 0;
+}
+
+body.white #add-todo-btn { color: #5a4a42; }
+
+#add-todo-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(169, 147, 130, 0.35);
 }
 
 /* 캘린더 그리드 */
 .calendar-container {
-    padding: 15px;
+    padding: 10px;
 }
 
 #calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 3px;
 }
 
 .day-cell {
@@ -206,8 +202,8 @@ body.white #add-todo-btn { color: #5a4a42; }
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -221,7 +217,9 @@ body.white #add-todo-btn { color: #5a4a42; }
     cursor: default;
     font-weight: 700;
     color: #718096;
-    font-size: 11px;
+    font-size: 9px;
+    aspect-ratio: auto;
+    height: 20px;
 }
 
 .day-cell.empty {
@@ -263,9 +261,9 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 /* 투두 점 */
 .todo-dot {
     position: absolute;
-    bottom: 3px;
-    width: 4px;
-    height: 4px;
+    bottom: 2px;
+    width: 3px;
+    height: 3px;
     background: var(--theme-primary);
     border-radius: 50%;
     animation: pulse 2s infinite;
@@ -279,9 +277,9 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 /* 완료 마크 */
 .complete-mark {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    font-size: 9px;
+    top: 1px;
+    right: 1px;
+    font-size: 8px;
     opacity: 0.7;
 }
 
@@ -293,22 +291,22 @@ body.white .day-cell.today.selected { color: #5a4a42; }
     left: 50%;
     transform: translate(-50%, -50%);
     background: white;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.25);
     z-index: 1000;
-    min-width: 280px;
-    max-width: 400px;
-    max-height: 60vh;
+    min-width: 240px;
+    max-width: 340px;
+    max-height: 50vh;
     overflow-y: auto;
 }
 
 #todo-tooltip h5 {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
     border-bottom: 2px solid #e9ecef;
     display: flex;
     justify-content: space-between;
@@ -321,12 +319,12 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 
 #todo-tooltip li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     padding: 8px;
     margin-bottom: 6px;
     background: #f8f9fa;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: all 0.2s ease;
 }
 
@@ -336,21 +334,30 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 
 .todo-info {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     flex: 1;
+    min-width: 0;
 }
 
 .todo-info input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     cursor: pointer;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.todo-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .todo-text {
-    flex: 1;
-    font-size: 13px;
+    font-size: 12px;
     color: #2d3748;
+    font-weight: 600;
+    word-break: break-word;
 }
 
 .todo-text.completed {
@@ -358,29 +365,48 @@ body.white .day-cell.today.selected { color: #5a4a42; }
     color: #a0aec0;
 }
 
+.todo-memo {
+    font-size: 10px;
+    color: #718096;
+    margin-top: 3px;
+    word-break: break-word;
+}
+
+.todo-memo.completed {
+    text-decoration: line-through;
+    color: #cbd5e0;
+}
+
 .todo-actions {
     display: flex;
-    gap: 4px;
+    gap: 2px;
+    flex-shrink: 0;
 }
 
 #todo-tooltip button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 6px;
+    padding: 3px 5px;
+    border-radius: 4px;
     transition: all 0.2s ease;
-    font-size: 14px;
+    font-size: 12px;
+}
+
+.edit-btn:hover {
+    background: #e3f2fd;
+    color: #2196f3;
 }
 
 .delete-btn:hover {
-    background: #fee;
+    background: #ffebee;
     color: #e74c3c;
 }
 
 #close-tooltip-btn {
     color: #888;
-    font-size: 16px;
+    font-size: 14px;
+    padding: 2px 4px;
 }
 
 #close-tooltip-btn:hover {
@@ -389,13 +415,17 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 
 .empty-state {
     text-align: center;
-    padding: 20px;
+    padding: 16px;
     color: #a0aec0;
 }
 
 .empty-state .emoji {
-    font-size: 36px;
-    margin-bottom: 8px;
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.empty-state div {
+    font-size: 11px;
 }
 
 /* 모달 */
@@ -414,40 +444,40 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 
 .modal-content {
     background: white;
-    border-radius: 16px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 16px;
     width: 90%;
-    max-width: 350px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    max-width: 300px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
 }
 
 .modal-content h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
 .form-group {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .form-group label {
     display: block;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: #4a5568;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 8px;
+    padding: 7px;
     border: 2px solid #e9ecef;
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 6px;
+    font-size: 12px;
     font-family: inherit;
     transition: all 0.2s ease;
 }
@@ -462,21 +492,21 @@ body.white .day-cell.today.selected { color: #5a4a42; }
 
 .form-group textarea {
     resize: vertical;
-    min-height: 60px;
+    min-height: 45px;
 }
 
 .modal-buttons {
     display: flex;
-    gap: 8px;
-    margin-top: 15px;
+    gap: 6px;
+    margin-top: 12px;
 }
 
 .modal-buttons button {
     flex: 1;
-    padding: 8px;
+    padding: 7px;
     border: none;
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -491,7 +521,7 @@ body.white #save-todo-btn { color: #5a4a42; }
 
 #save-todo-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(169, 147, 130, 0.3);
+    box-shadow: 0 3px 10px rgba(169, 147, 130, 0.3);
 }
 
 .close-btn {
@@ -503,9 +533,9 @@ body.white #save-todo-btn { color: #5a4a42; }
     background: #dee2e6;
 }
 
-/* 스크롤바 스타일 */
+/* 스크롤바 */
 #todo-tooltip::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
 }
 
 #todo-tooltip::-webkit-scrollbar-track {
@@ -518,84 +548,25 @@ body.white #save-todo-btn { color: #5a4a42; }
     border-radius: 10px;
 }
 
-#todo-tooltip::-webkit-scrollbar-thumb:hover {
-    background: var(--theme-secondary);
-}
-
 /* 반응형 */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
     body {
-        padding: 5px;
+        padding: 4px;
     }
 
     .container {
-        border-radius: 12px;
-    }
-    
-    .header {
-        padding: 12px;
+        border-radius: 10px;
     }
 
     .header h1 {
-        font-size: 16px;
+        font-size: 14px;
     }
 
-    .controls {
-        flex-direction: column;
-        gap: 8px;
-        padding: 10px 12px;
-    }
-
-    .stats {
-        flex-wrap: wrap;
-        gap: 6px;
-        padding: 8px 12px;
-    }
-
-    .stat-item {
+    .day-cell {
         font-size: 10px;
-        padding: 4px 8px;
-    }
-
-    .calendar-container {
-        padding: 12px;
-    }
-
-    #calendar-grid {
-        gap: 3px;
-    }
-
-    .day-cell {
-        font-size: 11px;
-        border-radius: 6px;
     }
 
     #todo-tooltip {
-        min-width: 260px;
-        padding: 12px;
-    }
-
-    .modal-content {
-        padding: 20px;
-    }
-}
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .stats {
-        flex-wrap: wrap;
-    }
-
-    #calendar-grid {
-        gap: 4px;
-    }
-
-    .day-cell {
-        font-size: 13px;
-    }
-
-    #todo-tooltip {
-        min-width: 300px;
+        min-width: 220px;
     }
 }
