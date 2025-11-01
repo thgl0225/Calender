@@ -1,4 +1,3 @@
-// DOM 요소
 const calendarGrid = document.getElementById('calendar-grid');
 const currentMonthYear = document.getElementById('current-month-year');
 const addTodoBtn = document.getElementById('add-todo-btn');
@@ -14,15 +13,13 @@ let currentDate = new Date();
 let selectedDate = new Date();
 selectedDate.setHours(0,0,0,0);
 
-// --- 유틸리티 ---
 function dateToKey(date){
     const y=date.getFullYear(), m=date.getMonth()+1, d=date.getDate();
     return `${y}-${m<10?'0':''+m}-${d<10?'0':''+d}`;
 }
-function loadTodos(){ return JSON.parse(localStorage.getItem('todos')) || {}; }
+function loadTodos(){ return JSON.parse(localStorage.getItem('todos'))||{}; }
 function saveTodos(todos){ localStorage.setItem('todos', JSON.stringify(todos)); }
 
-// --- 캘린더 렌더링 ---
 function renderCalendar(date){
     calendarGrid.innerHTML='';
     const month=date.getMonth(), year=date.getFullYear();
@@ -32,10 +29,12 @@ function renderCalendar(date){
     const daysInMonth=new Date(year,month+1,0).getDate();
     const daysOfWeek=['일','월','화','수','목','금','토'];
 
-    daysOfWeek.forEach(day=>{
+    daysOfWeek.forEach((day,i)=>{
         const h=document.createElement('div');
         h.className='day-cell header';
         h.textContent=day;
+        if(i===0) h.classList.add('sunday');
+        if(i===6) h.classList.add('saturday');
         calendarGrid.appendChild(h);
     });
 
@@ -56,8 +55,13 @@ function renderCalendar(date){
         const dateKey=dateToKey(cellDate);
         cell.dataset.date=dateKey;
 
+        const dayOfWeek=cellDate.getDay();
+        if(dayOfWeek===0) cell.style.color='red';
+        if(dayOfWeek===6) cell.style.color='blue';
+
         if(dateToKey(new Date())===dateKey) cell.classList.add('today');
         if(dateToKey(selectedDate)===dateKey) cell.classList.add('selected');
+
         if(todos[dateKey] && todos[dateKey].length>0){
             const dot=document.createElement('div');
             dot.className='todo-dot';
@@ -76,7 +80,6 @@ function renderCalendar(date){
     }
 }
 
-// --- 할 일 렌더링 ---
 function renderTodos(){
     const todoList=document.getElementById('todo-list');
     const todoTitle=document.getElementById('todo-title');
@@ -118,7 +121,6 @@ function renderTodos(){
     });
 }
 
-// --- 모달 이벤트 ---
 addTodoBtn.addEventListener('click',()=>{
     modal.style.display='flex';
     todoDateInput.value=dateToKey(selectedDate);
@@ -142,7 +144,6 @@ saveTodoBtn.addEventListener('click',()=>{
     renderTodos();
 });
 
-// --- 테마 ---
 themeBtns.forEach(btn=>{
     btn.addEventListener('click',()=>{
         document.body.classList.remove('default','cute','calm','mono');
@@ -150,6 +151,15 @@ themeBtns.forEach(btn=>{
     });
 });
 
-// --- 초기 실행 ---
+document.getElementById('prev-month').addEventListener('click',()=>{
+    currentDate.setMonth(currentDate.getMonth()-1);
+    renderCalendar(currentDate);
+});
+document.getElementById('next-month').addEventListener('click',()=>{
+    currentDate.setMonth(currentDate.getMonth()+1);
+    renderCalendar(currentDate);
+});
+
+// 초기 실행
 renderCalendar(currentDate);
 renderTodos();
