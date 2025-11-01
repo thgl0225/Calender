@@ -1,4 +1,5 @@
 const calendarGrid = document.getElementById('calendar-grid');
+const calendarContainer = document.querySelector('.calendar-container'); // 캘린더 컨테이너 추가
 const currentMonthYear = document.getElementById('current-month-year');
 const addTodoBtn = document.getElementById('add-todo-btn');
 const modal = document.getElementById('add-todo-modal');
@@ -34,6 +35,8 @@ function hideTooltip() {
     todoTooltip.style.display = 'none';
     todoTooltip.classList.remove('visible');
     todoTooltip.dataset.date = ''; 
+    // 팝업이 닫힐 때, 컨테이너의 position:relative 해제 (CSS에서 이미 처리했으므로 주석 처리)
+    // calendarContainer.style.position = '';
 }
 
 /**
@@ -44,19 +47,22 @@ function showTooltip(dateKey) {
     const todos = loadTodos();
     let dayTodos = todos[dateKey] || [];
     
-    dayTodos.sort((a,b) => getPriorityOrder(b.priority) - getPriorityOrder(a.priority));
-
     // 팝업이 이미 같은 날짜로 열려 있다면 닫기 (토글 기능)
     if (todoTooltip.classList.contains('visible') && todoTooltip.dataset.date === dateKey) {
         hideTooltip();
         return;
     }
 
-    // 팝업 제목을 날짜만 간단하게 표시
+    // 팝업 제목을 날짜만 간단하게 표시 (YYYY-MM-DD 형식)
+    // 날짜 키에서 연도-월-일 정보만 사용
     todoTooltip.innerHTML = `<h5>${dateKey} <button id="close-tooltip-btn" style="float:right; border:none; background:none; cursor:pointer; color:#888;">✖</button></h5>`;
     todoTooltip.dataset.date = dateKey;
 
-    // 할 일이 없을 경우, <ul> 태그 자체를 추가하지 않아 빈칸으로 남김
+    // 할 일 정렬 (우선순위 높은 순)
+    dayTodos.sort((a,b) => getPriorityOrder(b.priority) - getPriorityOrder(a.priority));
+
+
+    // 할 일이 없을 경우, 빈칸으로 표시
     if (dayTodos.length > 0) {
         const ul = document.createElement('ul');
         
@@ -72,7 +78,7 @@ function showTooltip(dateKey) {
             
             const textSpan = document.createElement('span');
             textSpan.textContent = todo.text;
-            textSpan.className = 'todo-text'; // 체크박스 로직을 위해 클래스 추가
+            textSpan.className = 'todo-text'; 
             if (todo.completed) textSpan.classList.add('completed');
             
             const prioritySpan = document.createElement('span');
@@ -92,7 +98,7 @@ function showTooltip(dateKey) {
                     textSpan.classList.remove('completed');
                 }
                 
-                // 캘린더 점 업데이트를 위해 리렌더링 (팝업은 계속 떠있음)
+                // 3. 캘린더 점 업데이트를 위해 리렌더링 (팝업은 계속 떠있음)
                 renderCalendar(currentDate); 
             });
 
@@ -107,10 +113,16 @@ function showTooltip(dateKey) {
             // 삭제 버튼 클릭 이벤트 리스너 (삭제 후 팝업 갱신)
             deleteBtn.addEventListener('click', () => {
                 todos[dateKey].splice(index, 1);
+                
+                // 배열이 비었으면 키 삭제
+                if (todos[dateKey].length === 0) {
+                    delete todos[dateKey];
+                }
+                
                 saveTodos(todos);
                 
                 // 삭제 후 팝업 내용 및 캘린더 업데이트 (재정렬 포함)
-                showTooltip(dateKey); 
+                showTooltip(dateKey); // 재귀 호출하여 업데이트
                 renderCalendar(currentDate); 
             });
 
@@ -128,13 +140,15 @@ function showTooltip(dateKey) {
     // 팝업 닫기 버튼 이벤트 연결
     document.getElementById('close-tooltip-btn').addEventListener('click', hideTooltip);
 
-    // 중앙에 표시
+    // 팝업을 표시하고 보이게 설정
+    // CSS에서 position: absolute, top: 50%, left: 50%, transform: translate(-50%, -50%)를 사용하여
+    // 캘린더 컨테이너 중앙에 위치하도록 이미 처리했습니다.
     todoTooltip.style.display = 'block';
     todoTooltip.classList.add('visible');
 }
 
 
-// --- 캘린더 생성 기능 (변경 없음) ---
+// --- 캘린더 생성 기능 ---
 function renderCalendar(date){
     calendarGrid.innerHTML='';
 
@@ -161,7 +175,9 @@ function renderCalendar(date){
     }
 
     const todos=loadTodos();
-    const todayKey=dateToKey(new Date());
+    const today=new Date();
+    today.setHours(0,0,0,0);
+    const todayKey=dateToKey(today);
 
     // 3. 실제 날짜 셀 생성
     for(let d=1;d<=daysInMonth;d++){
@@ -178,14 +194,20 @@ function renderCalendar(date){
         if(dayOfWeek===0) cell.classList.add('sunday'); 
         if(dayOfWeek===6) cell.classList.add('saturday'); 
 
+        // 🌟 테마별 색상 적용을 위한 'today' 클래스 추가
         if(todayKey===dateKey) cell.classList.add('today');
+        
         if(dateToKey(selectedDate)===dateKey) cell.classList.add('selected');
 
-        // 할 일 표시 점
+        // 할 일 표시 점 (하나라도 미완료가 있으면 점 표시)
         if(todos[dateKey] && todos[dateKey].length > 0){
-            const dot=document.createElement('div');
-            dot.className='todo-dot';
-            cell.appendChild(dot);
+             // 미완료 할 일이 있는지 확인
+            const hasIncomplete = todos[dateKey].some(todo => !todo.completed);
+            if (hasIncomplete) {
+                const dot=document.createElement('div');
+                dot.className='todo-dot';
+                cell.appendChild(dot);
+            }
         }
 
         // --- 날짜 클릭 이벤트 (선택 및 팝업 토글) ---
@@ -221,7 +243,7 @@ document.addEventListener('click', (e) => {
 
 // --- 이벤트 리스너 ---
 
-// 테마 버튼 (변경 없음)
+// 테마 버튼
 document.body.classList.add(loadTheme()); 
 themeBtns.forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -229,21 +251,25 @@ themeBtns.forEach(btn=>{
         document.body.classList.remove('default','cute','calm','mono');
         document.body.classList.add(theme);
         saveTheme(theme);
+        
+        // 테마 변경 시 캘린더 리렌더링 (오늘 날짜 색상 적용을 위해)
         renderCalendar(currentDate); 
     });
 });
 
-// 달력 이동 (변경 없음)
+// 달력 이동
 document.getElementById('prev-month').addEventListener('click',()=>{
     currentDate.setMonth(currentDate.getMonth()-1);
     renderCalendar(currentDate);
+    hideTooltip(); // 달 이동 시 팝업 닫기
 });
 document.getElementById('next-month').addEventListener('click',()=>{
     currentDate.setMonth(currentDate.getMonth()+1);
     renderCalendar(currentDate);
+    hideTooltip(); // 달 이동 시 팝업 닫기
 });
 
-// 모달 관련 (변경 없음)
+// 모달 관련
 addTodoBtn.addEventListener('click',()=>{
     modal.style.display='flex'; 
     todoDateInput.value=dateToKey(selectedDate);
@@ -253,7 +279,7 @@ addTodoBtn.addEventListener('click',()=>{
 closeBtn.addEventListener('click',()=>modal.style.display='none');
 window.addEventListener('click',e=>{if(e.target==modal) modal.style.display='none';});
 
-// 할 일 저장 (변경 없음)
+// 할 일 저장
 saveTodoBtn.addEventListener('click',()=>{
     const dateVal=todoDateInput.value;
     const textVal=todoTextInput.value.trim();
@@ -266,9 +292,11 @@ saveTodoBtn.addEventListener('click',()=>{
     saveTodos(todos);
     modal.style.display='none';
     
-    const [y, m] = dateVal.split('-');
-    if (Number(y) === currentDate.getFullYear() && Number(m) === currentDate.getMonth() + 1) {
+    const [y, m] = dateVal.split('-').map(Number);
+    // 현재 달력과 저장된 날짜가 같으면 리렌더링
+    if (y === currentDate.getFullYear() && m === currentDate.getMonth() + 1) {
         renderCalendar(currentDate);
+        // 저장한 날짜가 선택된 날짜와 같으면 팝업 갱신
         if (dateVal === dateToKey(selectedDate)) {
              showTooltip(dateVal);
         }
