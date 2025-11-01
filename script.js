@@ -55,19 +55,24 @@ function calculateStats() {
     // 연속 완료일 계산
     let streak = 0;
     let checkDate = new Date(today);
-    while(true) {
+    let maxDays = 0; // 안전 장치
+    
+    while(maxDays < 365) {
         const key = dateToKey(checkDate);
         const dayTodos = todosData[key] || [];
+        
         if (dayTodos.length > 0 && dayTodos.every(t => t.completed)) {
             streak++;
-            checkDate.setDate(checkDate.getDate() - 1);
         } else if (dayTodos.length === 0) {
-            checkDate.setDate(checkDate.getDate() - 1);
-            if (streak > 0) break;
+            // 할 일이 없는 날은 카운트하지 않고 계속 진행
+            if (streak > 0) break; // 이미 streak가 있다면 중단
         } else {
+            // 미완료가 있으면 중단
             break;
         }
-        if (streak > 365) break; // 무한루프 방지
+        
+        checkDate.setDate(checkDate.getDate() - 1);
+        maxDays++;
     }
 
     // 전체 완료 개수
