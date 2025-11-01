@@ -30,12 +30,10 @@ function getPriorityOrder(prio) {
 
 
 // --- 툴팁 표시 및 숨기기 함수 ---
-
-// 팝업을 숨기는 함수 (외부 클릭 및 X 버튼 클릭 시 사용)
 function hideTooltip() {
     todoTooltip.style.display = 'none';
     todoTooltip.classList.remove('visible');
-    todoTooltip.dataset.date = ''; // 팝업이 열린 날짜 정보 초기화
+    todoTooltip.dataset.date = ''; 
 }
 
 /**
@@ -48,19 +46,20 @@ function showTooltip(dateKey) {
     
     dayTodos.sort((a,b) => getPriorityOrder(b.priority) - getPriorityOrder(a.priority));
 
-    // 팝업이 이미 같은 날짜로 열려 있다면 닫기
+    // 팝업이 이미 같은 날짜로 열려 있다면 닫기 (토글 기능)
     if (todoTooltip.classList.contains('visible') && todoTooltip.dataset.date === dateKey) {
         hideTooltip();
         return;
     }
 
-    todoTooltip.innerHTML = `<h5>${dateKey}의 할 일 <button id="close-tooltip-btn" style="float:right; border:none; background:none; cursor:pointer; color:#888;">✖</button></h5>`;
+    // 팝업 제목을 날짜만 간단하게 표시
+    todoTooltip.innerHTML = `<h5>${dateKey} <button id="close-tooltip-btn" style="float:right; border:none; background:none; cursor:pointer; color:#888;">✖</button></h5>`;
     todoTooltip.dataset.date = dateKey;
 
-    if (dayTodos.length === 0) {
-        todoTooltip.innerHTML += '<ul><li>할 일이 없습니다.</li></ul>';
-    } else {
+    // 할 일이 없을 경우, <ul> 태그 자체를 추가하지 않아 빈칸으로 남김
+    if (dayTodos.length > 0) {
         const ul = document.createElement('ul');
+        
         dayTodos.forEach((todo, index) => {
             const li = document.createElement('li');
             
@@ -71,20 +70,32 @@ function showTooltip(dateKey) {
             checkbox.type = 'checkbox';
             checkbox.checked = todo.completed;
             
-            // 체크박스 클릭 이벤트 리스너: 상태 변경 및 저장
-            checkbox.addEventListener('change', (e) => {
-                todos[dateKey][index].completed = e.target.checked;
-                saveTodos(todos);
-                showTooltip(dateKey); // 팝업 내용 갱신
-            });
-
             const textSpan = document.createElement('span');
             textSpan.textContent = todo.text;
+            textSpan.className = 'todo-text'; // 체크박스 로직을 위해 클래스 추가
             if (todo.completed) textSpan.classList.add('completed');
             
             const prioritySpan = document.createElement('span');
             prioritySpan.className = 'priority';
             prioritySpan.textContent = todo.priority === 'high' ? '⭐⭐⭐' : todo.priority === 'medium' ? '⭐⭐' : '⭐';
+
+            // --- 체크박스 클릭 이벤트 리스너 (팝업 유지) ---
+            checkbox.addEventListener('change', (e) => {
+                // 1. 데이터 업데이트 및 저장
+                todos[dateKey][index].completed = e.target.checked;
+                saveTodos(todos);
+                
+                // 2. UI만 직접 업데이트 (팝업 닫힘 방지)
+                if (e.target.checked) {
+                    textSpan.classList.add('completed');
+                } else {
+                    textSpan.classList.remove('completed');
+                }
+                
+                // 캘린더 점 업데이트를 위해 리렌더링 (팝업은 계속 떠있음)
+                renderCalendar(currentDate); 
+            });
+
 
             // --- 삭제 버튼 추가 ---
             const deleteBtn = document.createElement('button');
@@ -93,13 +104,13 @@ function showTooltip(dateKey) {
             deleteBtn.style.padding = '0';
             deleteBtn.style.fontSize = '0.9em';
             
-            // 삭제 버튼 클릭 이벤트 리스너
+            // 삭제 버튼 클릭 이벤트 리스너 (삭제 후 팝업 갱신)
             deleteBtn.addEventListener('click', () => {
                 todos[dateKey].splice(index, 1);
                 saveTodos(todos);
                 
-                // 삭제 후 팝업 내용 및 캘린더 업데이트
-                showTooltip(dateKey);
+                // 삭제 후 팝업 내용 및 캘린더 업데이트 (재정렬 포함)
+                showTooltip(dateKey); 
                 renderCalendar(currentDate); 
             });
 
@@ -117,12 +128,13 @@ function showTooltip(dateKey) {
     // 팝업 닫기 버튼 이벤트 연결
     document.getElementById('close-tooltip-btn').addEventListener('click', hideTooltip);
 
+    // 중앙에 표시
     todoTooltip.style.display = 'block';
     todoTooltip.classList.add('visible');
 }
 
 
-// --- 캘린더 생성 기능 ---
+// --- 캘린더 생성 기능 (변경 없음) ---
 function renderCalendar(date){
     calendarGrid.innerHTML='';
 
@@ -170,7 +182,7 @@ function renderCalendar(date){
         if(dateToKey(selectedDate)===dateKey) cell.classList.add('selected');
 
         // 할 일 표시 점
-        if(todos[dateKey] && todos[dateKey].length>0){
+        if(todos[dateKey] && todos[dateKey].length > 0){
             const dot=document.createElement('div');
             dot.className='todo-dot';
             cell.appendChild(dot);
@@ -198,7 +210,7 @@ function renderCalendar(date){
 
 // --- 전역 클릭 이벤트 (팝업 닫기) ---
 document.addEventListener('click', (e) => {
-    // 클릭된 요소가 팝업, 모달, 또는 날짜 셀이 아닌 경우 팝업 닫기
+    // 팝업, 모달, 날짜 셀 어디에도 속하지 않는 곳을 클릭했을 때 팝업 닫기
     if (!e.target.closest('#todo-tooltip') && 
         !e.target.closest('#add-todo-modal') &&
         !e.target.closest('.day-cell')) {
@@ -254,11 +266,9 @@ saveTodoBtn.addEventListener('click',()=>{
     saveTodos(todos);
     modal.style.display='none';
     
-    // 할 일이 추가된 날짜가 현재 달에 있다면 캘린더 리렌더링 (점 표시 업데이트)
     const [y, m] = dateVal.split('-');
     if (Number(y) === currentDate.getFullYear() && Number(m) === currentDate.getMonth() + 1) {
         renderCalendar(currentDate);
-        // 추가된 날짜가 현재 선택된 날짜라면 팝업 열기
         if (dateVal === dateToKey(selectedDate)) {
              showTooltip(dateVal);
         }
