@@ -8,6 +8,7 @@ const todoTextInput = document.getElementById('todo-text');
 const todoPrioritySelect = document.getElementById('todo-priority');
 const saveTodoBtn = document.getElementById('save-todo-btn');
 const themeBtns = document.querySelectorAll('.theme-btn');
+const todoTooltip = document.getElementById('todo-tooltip'); // Tooltip 요소 추가
 
 let currentDate = new Date();
 let selectedDate = new Date();
@@ -22,21 +23,118 @@ function loadTodos(){ return JSON.parse(localStorage.getItem('todos'))||{}; }
 function saveTodos(todos){ localStorage.setItem('todos', JSON.stringify(todos)); }
 function loadTheme(){ return localStorage.getItem('theme') || 'default'; }
 function saveTheme(theme){ localStorage.setItem('theme', theme); }
+function getPriorityOrder(prio) { // 중요도 순서 함수
+    const order = { high: 3, medium: 2, low: 1 };
+    return order[prio] || 0;
+}
+
+
+// --- 툴팁 표시 및 숨기기 함수 ---
+function hideTooltip() {
+    todoTooltip.style.display = 'none';
+    todoTooltip.classList.remove('visible');
+}
+
+function showTooltip(dateKey, targetElement) {
+    const todos = loadTodos();
+    // 중요도 순서로 정렬: high > medium > low
+    const dayTodos = todos[dateKey] ? todos[dateKey].sort((a,b) => getPriorityOrder(b.priority) - getPriorityOrder(a.priority)) : [];
+
+    todoTooltip.innerHTML = `<h5>${dateKey}의 할 일</h5>`;
+    
+    if (dayTodos.length === 0) {
+        todoTooltip.innerHTML += '<ul><li>할 일이 없습니다.</li></ul>';
+    } else {
+        const ul = document.createElement('ul');
+        dayTodos.forEach((todo, index) => {
+            const li = document.createElement('li');
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = todo.completed;
+            
+            // 툴팁 내 체크박스 클릭 이벤트 리스너: 상태 변경 및 저장
+            checkbox.addEventListener('change', (e) => {
+                // 원본 todos 객체를 수정
+                todos[dateKey][index].completed = e.target.checked;
+                saveTodos(todos);
+                
+                // UI 업데이트
+                const textSpan = li.querySelector('span:not(.priority)');
+                if (e.target.checked) {
+                    textSpan.classList.add('completed');
+                } else {
+                    textSpan.classList.remove('completed');
+                }
+            });
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = todo.text;
+            if (todo.completed) textSpan.classList.add('completed');
+            
+            const prioritySpan = document.createElement('span');
+            prioritySpan.className = 'priority';
+            prioritySpan.textContent = todo.priority === 'high' ? '⭐⭐⭐' : todo.priority === 'medium' ? '⭐⭐' : '⭐';
+
+            li.appendChild(checkbox);
+            li.appendChild(textSpan);
+            li.appendChild(prioritySpan);
+            ul.appendChild(li);
+        });
+        todoTooltip.appendChild(ul);
+    }
+    
+    // 툴팁 위치 계산 (날짜 셀 위에 띄우기)
+    const rect = targetElement.getBoundingClientRect();
+    const containerRect = document.getElementById('widget-container').getBoundingClientRect();
+    
+    // Tooltip을 위젯 컨테이너 기준으로 배치
+    todoTooltip.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
+    todoTooltip.style.top = `${rect.top - containerRect.top - todoTooltip.offsetHeight - 10}px`; // 날짜 셀 위쪽으로 띄우기 (간격 10px)
+
+    // 만약 툴팁이 컨테이너 밖으로 나간다면 (왼쪽) 위치 조정
+    let tooltipLeft = rect.left - containerRect.left + rect.width / 2 - todoTooltip.offsetWidth / 2;
+    if (tooltipLeft < 0) {
+        tooltipLeft = 5; // 왼쪽에서 5px 간격
+    } else if (tooltipLeft + todoTooltip.offsetWidth > containerRect.width) {
+        tooltipLeft = containerRect.width - todoTooltip.offsetWidth - 5; // 오른쪽에서 5px 간격
+    }
+
+    todoTooltip.style.left = `${tooltipLeft}px`;
+    todoTooltip.style.top = `${rect.top - containerRect.top + rect.height + 5}px`; // 날짜 셀 아래로 띄우기
+    
+    // 팝업이 위로 튀어나가지 않도록 위치 조정 로직 추가
+    // 만약 팝업이 위젯 컨테이너 위쪽 경계를 넘어서면, 날짜 셀 아래에 표시
+    const tooltipHeight = todoTooltip.offsetHeight || 150; // 예상 높이
+    const newTop = rect.top - containerRect.top - tooltipHeight - 10;
+    
+    if (newTop < 0) {
+        // 위젯 상단을 넘어서면, 날짜 셀 아래에 표시
+        todoTooltip.style.top = `${rect.bottom - containerRect.top + 5}px`;
+    } else {
+        // 충분한 공간이 있다면, 날짜 셀 위에 표시
+        todoTooltip.style.top = `${newTop}px`;
+    }
+
+    todoTooltip.style.display = 'block';
+    todoTooltip.classList.add('visible');
+}
+
 
 // --- 캘린더 생성 기능 ---
 function renderCalendar(date){
     calendarGrid.innerHTML='';
+    hideTooltip(); // 캘린더 리렌더링 시 툴팁 숨기기
+
     const month=date.getMonth(), year=date.getFullYear();
     currentMonthYear.textContent=`${year}년 ${month+1}월`;
 
-    // 1일의 요일 (0:일 ~ 6:토)
     const firstDay=new Date(year,month,1).getDay(); 
-    // 이번 달의 총 일수
     const daysInMonth=new Date(year,month+1,0).getDate(); 
     const daysOfWeek=['일','월','화','수','목','금','토'];
 
     // 1. 요일 헤더 생성
-    daysOfWeek.forEach((day,i)=>{
+    daysOfWeek.forEach(day=>{
         const h=document.createElement('div');
         h.className='day-cell header';
         h.textContent=day;
@@ -59,16 +157,14 @@ function renderCalendar(date){
         cell.className='day-cell';
         cell.textContent=d;
 
-        // Date 객체를 생성하고 시간을 0으로 설정하여 날짜만 정확히 반영
         const cellDate=new Date(year,month,d);
         cellDate.setHours(0,0,0,0);
         const dateKey=dateToKey(cellDate);
         cell.dataset.date=dateKey;
 
-        // 요일을 가져와 주말 색상 클래스 추가
         const dayOfWeek=cellDate.getDay();
-        if(dayOfWeek===0) cell.classList.add('sunday'); // 일요일 (빨간색)
-        if(dayOfWeek===6) cell.classList.add('saturday'); // 토요일 (파란색)
+        if(dayOfWeek===0) cell.classList.add('sunday'); 
+        if(dayOfWeek===6) cell.classList.add('saturday'); 
 
         if(todayKey===dateKey) cell.classList.add('today');
         if(dateToKey(selectedDate)===dateKey) cell.classList.add('selected');
@@ -80,78 +176,51 @@ function renderCalendar(date){
             cell.appendChild(dot);
         }
 
-        // 날짜 클릭 이벤트
+        // --- 마우스 이벤트 리스너 (Tooltip) ---
+        cell.addEventListener('mouseenter', () => {
+            if (!cell.classList.contains('empty') && todos[dateKey] && todos[dateKey].length > 0) {
+                showTooltip(dateKey, cell);
+            }
+        });
+        cell.addEventListener('mouseleave', (e) => {
+            // 마우스가 툴팁 자체로 이동하면 툴팁을 유지
+            if (!e.relatedTarget || e.relatedTarget.closest('#todo-tooltip') !== todoTooltip) {
+                setTimeout(hideTooltip, 100); // 약간의 딜레이 후 숨김
+            }
+        });
+
+        // 날짜 클릭 이벤트 (선택 하이라이트 유지 및 툴팁 재표시)
         cell.addEventListener('click',()=>{
             document.querySelectorAll('.day-cell.selected').forEach(c=>c.classList.remove('selected'));
             cell.classList.add('selected');
-            
-            // 날짜만 정확히 업데이트 (시간대 문제 방지)
             selectedDate=cellDate; 
-            renderTodos();
+            
+            // 클릭 시에도 툴팁을 표시 (커서 유지 불필요)
+            if (!cell.classList.contains('empty') && todos[dateKey] && todos[dateKey].length > 0) {
+                 showTooltip(dateKey, cell);
+            } else {
+                 hideTooltip();
+            }
         });
-
+        
         calendarGrid.appendChild(cell);
     }
 }
 
-// --- 투두리스트 렌더링 기능 ---
-function renderTodos(){
-    const todoList=document.getElementById('todo-list');
-    const todoTitle=document.getElementById('todo-title');
-    const todos=loadTodos();
-    const dateKey=dateToKey(selectedDate);
-    // 중요도: high > medium > low 순으로 정렬
-    const dayTodos=todos[dateKey] ? todos[dateKey].sort((a,b) => {
-        const order = { high: 3, medium: 2, low: 1 };
-        return order[b.priority] - order[a.priority];
-    }) : [];
-
-    todoTitle.textContent=`${dateKey}의 할 일`;
-    todoList.innerHTML='';
-
-    if(dayTodos.length===0){
-        todoList.innerHTML='<li>선택된 날짜에 할 일이 없습니다.</li>';
-        return;
-    }
-
-    dayTodos.forEach(todo=>{
-        const li=document.createElement('li');
-        
-        const checkbox=document.createElement('input');
-        checkbox.type='checkbox';
-        checkbox.checked=todo.completed;
-        checkbox.addEventListener('change',()=>{
-            todo.completed=checkbox.checked;
-            saveTodos(todos);
-            renderTodos();
-        });
-
-        const textSpan=document.createElement('span');
-        textSpan.textContent=todo.text;
-        if(todo.completed) textSpan.classList.add('completed');
-
-        const prioritySpan=document.createElement('span');
-        prioritySpan.textContent=todo.priority==='high'?'⭐⭐⭐':todo.priority==='medium'?'⭐⭐':'⭐';
-        prioritySpan.style.marginLeft='5px';
-        prioritySpan.style.flexShrink='0'; // 중요도가 줄어들지 않도록
-
-        li.appendChild(checkbox);
-        li.appendChild(textSpan);
-        li.appendChild(prioritySpan);
-        todoList.appendChild(li);
-    });
-}
+// 툴팁 위에 마우스가 올라가면 툴팁 유지
+todoTooltip.addEventListener('mouseleave', hideTooltip);
 
 // --- 이벤트 리스너 ---
 
 // 테마 버튼
+document.body.classList.add(loadTheme()); 
 themeBtns.forEach(btn=>{
     btn.addEventListener('click',()=>{
         const theme = btn.dataset.theme;
         document.body.classList.remove('default','cute','calm','mono');
         document.body.classList.add(theme);
-        saveTheme(theme); // 테마 저장
-        renderCalendar(currentDate); // dot 색상 업데이트 위해 캘린더 리렌더링
+        saveTheme(theme);
+        renderCalendar(currentDate); 
     });
 });
 
@@ -167,7 +236,7 @@ document.getElementById('next-month').addEventListener('click',()=>{
 
 // 모달 관련
 addTodoBtn.addEventListener('click',()=>{
-    modal.style.display='flex'; // flex로 변경
+    modal.style.display='flex'; 
     todoDateInput.value=dateToKey(selectedDate);
     todoTextInput.value='';
     todoPrioritySelect.value='medium';
@@ -188,19 +257,13 @@ saveTodoBtn.addEventListener('click',()=>{
     saveTodos(todos);
     modal.style.display='none';
     
-    // 할 일이 추가된 날짜가 현재 달에 있다면 캘린더와 투두 리렌더링
+    // 할 일이 추가된 날짜가 현재 달에 있다면 캘린더 리렌더링 (점 표시 업데이트)
     const [y, m] = dateVal.split('-');
     if (Number(y) === currentDate.getFullYear() && Number(m) === currentDate.getMonth() + 1) {
         renderCalendar(currentDate);
-        if(dateVal === dateToKey(selectedDate)) {
-            renderTodos();
-        }
     }
 });
 
 
 // --- 초기 실행 ---
-// 저장된 테마 로드
-document.body.classList.add(loadTheme()); 
 renderCalendar(currentDate);
-renderTodos();
