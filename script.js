@@ -30,118 +30,101 @@ function getPriorityOrder(prio) {
 
 
 // --- 툴팁 표시 및 숨기기 함수 ---
+
+// 팝업을 숨기는 함수 (외부 클릭 및 X 버튼 클릭 시 사용)
 function hideTooltip() {
     todoTooltip.style.display = 'none';
     todoTooltip.classList.remove('visible');
+    todoTooltip.dataset.date = ''; // 팝업이 열린 날짜 정보 초기화
 }
 
 /**
- * 특정 날짜의 투두리스트를 팝업에 렌더링하고 위치를 조정합니다.
+ * 특정 날짜의 투두리스트를 팝업에 렌더링하고 중앙에 표시합니다.
  * @param {string} dateKey - 'YYYY-MM-DD' 형식의 날짜 키
- * @param {HTMLElement} targetElement - 날짜 셀 요소 (기준 위치)
  */
-function showTooltip(dateKey, targetElement) {
+function showTooltip(dateKey) {
     const todos = loadTodos();
     let dayTodos = todos[dateKey] || [];
     
-    // 중요도 순서로 정렬: high > medium > low
     dayTodos.sort((a,b) => getPriorityOrder(b.priority) - getPriorityOrder(a.priority));
 
-    todoTooltip.innerHTML = `<h5>${dateKey}의 할 일</h5>`;
-    
+    // 팝업이 이미 같은 날짜로 열려 있다면 닫기
+    if (todoTooltip.classList.contains('visible') && todoTooltip.dataset.date === dateKey) {
+        hideTooltip();
+        return;
+    }
+
+    todoTooltip.innerHTML = `<h5>${dateKey}의 할 일 <button id="close-tooltip-btn" style="float:right; border:none; background:none; cursor:pointer; color:#888;">✖</button></h5>`;
+    todoTooltip.dataset.date = dateKey;
+
     if (dayTodos.length === 0) {
-        // 투두가 없는 경우, Tooltip을 숨기고 캘린더 리렌더링 (점 제거)
-        hideTooltip(); 
-        renderCalendar(currentDate); 
-        return; 
-    }
-    
-    const ul = document.createElement('ul');
-    dayTodos.forEach((todo, index) => {
-        const li = document.createElement('li');
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = todo.completed;
-        
-        // 체크박스 클릭 이벤트 리스너
-        checkbox.addEventListener('change', (e) => {
-            todos[dateKey][index].completed = e.target.checked;
-            saveTodos(todos);
-            showTooltip(dateKey, targetElement); // 팝업 내용 갱신
-        });
-
-        const textSpan = document.createElement('span');
-        textSpan.textContent = todo.text;
-        if (todo.completed) textSpan.classList.add('completed');
-        
-        const prioritySpan = document.createElement('span');
-        prioritySpan.className = 'priority';
-        prioritySpan.textContent = todo.priority === 'high' ? '⭐⭐⭐' : todo.priority === 'medium' ? '⭐⭐' : '⭐';
-
-        // --- 삭제 버튼 추가 ---
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '✖';
-        deleteBtn.style.background = 'none';
-        deleteBtn.style.border = 'none';
-        deleteBtn.style.color = '#ccc';
-        deleteBtn.style.cursor = 'pointer';
-        deleteBtn.style.marginLeft = '5px';
-        deleteBtn.style.fontSize = '0.8em';
-        
-        // 삭제 버튼 클릭 이벤트 리스너
-        deleteBtn.addEventListener('click', () => {
-            // 해당 인덱스의 투두 항목 제거
-            todos[dateKey].splice(index, 1);
-            saveTodos(todos);
-            
-            // 삭제 후 팝업 내용 및 캘린더 업데이트
-            showTooltip(dateKey, targetElement);
-            renderCalendar(currentDate); 
-        });
-
-
-        li.appendChild(checkbox);
-        li.appendChild(textSpan);
-        li.appendChild(prioritySpan);
-        li.appendChild(deleteBtn);
-        ul.appendChild(li);
-    });
-    todoTooltip.appendChild(ul);
-    
-    // 툴팁 위치 계산 (이전과 동일한 로직)
-    const rect = targetElement.getBoundingClientRect();
-    const containerRect = document.getElementById('widget-container').getBoundingClientRect();
-    
-    // 팝업이 위로 튀어나가지 않도록 위치 조정 로직
-    todoTooltip.style.display = 'block';
-    const tooltipHeight = todoTooltip.offsetHeight || 150; 
-    const newTop = rect.top - containerRect.top - tooltipHeight - 10;
-    
-    let tooltipLeft = rect.left - containerRect.left + rect.width / 2 - todoTooltip.offsetWidth / 2;
-    if (tooltipLeft < 0) {
-        tooltipLeft = 5; 
-    } else if (tooltipLeft + todoTooltip.offsetWidth > containerRect.width) {
-        tooltipLeft = containerRect.width - todoTooltip.offsetWidth - 5; 
-    }
-    todoTooltip.style.left = `${tooltipLeft}px`;
-
-    if (newTop < 0) {
-        // 위젯 상단을 넘어서면, 날짜 셀 아래에 표시
-        todoTooltip.style.top = `${rect.bottom - containerRect.top + 5}px`;
+        todoTooltip.innerHTML += '<ul><li>할 일이 없습니다.</li></ul>';
     } else {
-        // 충분한 공간이 있다면, 날짜 셀 위에 표시
-        todoTooltip.style.top = `${newTop}px`;
-    }
+        const ul = document.createElement('ul');
+        dayTodos.forEach((todo, index) => {
+            const li = document.createElement('li');
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'todo-info';
 
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = todo.completed;
+            
+            // 체크박스 클릭 이벤트 리스너: 상태 변경 및 저장
+            checkbox.addEventListener('change', (e) => {
+                todos[dateKey][index].completed = e.target.checked;
+                saveTodos(todos);
+                showTooltip(dateKey); // 팝업 내용 갱신
+            });
+
+            const textSpan = document.createElement('span');
+            textSpan.textContent = todo.text;
+            if (todo.completed) textSpan.classList.add('completed');
+            
+            const prioritySpan = document.createElement('span');
+            prioritySpan.className = 'priority';
+            prioritySpan.textContent = todo.priority === 'high' ? '⭐⭐⭐' : todo.priority === 'medium' ? '⭐⭐' : '⭐';
+
+            // --- 삭제 버튼 추가 ---
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '✖';
+            deleteBtn.style.color = 'red';
+            deleteBtn.style.padding = '0';
+            deleteBtn.style.fontSize = '0.9em';
+            
+            // 삭제 버튼 클릭 이벤트 리스너
+            deleteBtn.addEventListener('click', () => {
+                todos[dateKey].splice(index, 1);
+                saveTodos(todos);
+                
+                // 삭제 후 팝업 내용 및 캘린더 업데이트
+                showTooltip(dateKey);
+                renderCalendar(currentDate); 
+            });
+
+            infoDiv.appendChild(checkbox);
+            infoDiv.appendChild(textSpan);
+            infoDiv.appendChild(prioritySpan);
+
+            li.appendChild(infoDiv);
+            li.appendChild(deleteBtn);
+            ul.appendChild(li);
+        });
+        todoTooltip.appendChild(ul);
+    }
+    
+    // 팝업 닫기 버튼 이벤트 연결
+    document.getElementById('close-tooltip-btn').addEventListener('click', hideTooltip);
+
+    todoTooltip.style.display = 'block';
     todoTooltip.classList.add('visible');
 }
 
 
-// --- 캘린더 생성 기능 (변경 없음) ---
+// --- 캘린더 생성 기능 ---
 function renderCalendar(date){
     calendarGrid.innerHTML='';
-    hideTooltip(); 
 
     const month=date.getMonth(), year=date.getFullYear();
     currentMonthYear.textContent=`${year}년 ${month+1}월`;
@@ -193,28 +176,18 @@ function renderCalendar(date){
             cell.appendChild(dot);
         }
 
-        // --- 마우스 이벤트 리스너 (Tooltip) ---
-        cell.addEventListener('mouseenter', () => {
-            if (!cell.classList.contains('empty') && todos[dateKey] && todos[dateKey].length > 0) {
-                showTooltip(dateKey, cell);
-            }
-        });
-        cell.addEventListener('mouseleave', (e) => {
-            if (!e.relatedTarget || e.relatedTarget.closest('#todo-tooltip') !== todoTooltip) {
-                setTimeout(hideTooltip, 100);
-            }
-        });
-
-        // 날짜 클릭 이벤트 (선택 하이라이트 유지 및 툴팁 재표시)
+        // --- 날짜 클릭 이벤트 (선택 및 팝업 토글) ---
         cell.addEventListener('click',()=>{
+            // 1. 기존 선택 하이라이트 제거
             document.querySelectorAll('.day-cell.selected').forEach(c=>c.classList.remove('selected'));
+            
+            // 2. 새 날짜 선택 및 업데이트
             cell.classList.add('selected');
             selectedDate=cellDate; 
             
-            if (!cell.classList.contains('empty') && todos[dateKey] && todos[dateKey].length > 0) {
-                 showTooltip(dateKey, cell);
-            } else {
-                 hideTooltip();
+            // 3. 팝업 토글 로직
+            if (!cell.classList.contains('empty')) {
+                 showTooltip(dateKey); // 팝업 토글
             }
         });
         
@@ -222,8 +195,16 @@ function renderCalendar(date){
     }
 }
 
-// 툴팁 위에 마우스가 올라가면 툴팁 유지
-todoTooltip.addEventListener('mouseleave', hideTooltip);
+
+// --- 전역 클릭 이벤트 (팝업 닫기) ---
+document.addEventListener('click', (e) => {
+    // 클릭된 요소가 팝업, 모달, 또는 날짜 셀이 아닌 경우 팝업 닫기
+    if (!e.target.closest('#todo-tooltip') && 
+        !e.target.closest('#add-todo-modal') &&
+        !e.target.closest('.day-cell')) {
+        hideTooltip();
+    }
+});
 
 
 // --- 이벤트 리스너 ---
@@ -273,9 +254,14 @@ saveTodoBtn.addEventListener('click',()=>{
     saveTodos(todos);
     modal.style.display='none';
     
+    // 할 일이 추가된 날짜가 현재 달에 있다면 캘린더 리렌더링 (점 표시 업데이트)
     const [y, m] = dateVal.split('-');
     if (Number(y) === currentDate.getFullYear() && Number(m) === currentDate.getMonth() + 1) {
         renderCalendar(currentDate);
+        // 추가된 날짜가 현재 선택된 날짜라면 팝업 열기
+        if (dateVal === dateToKey(selectedDate)) {
+             showTooltip(dateVal);
+        }
     }
 });
 
