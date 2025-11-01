@@ -11,14 +11,19 @@ const saveTodoBtn = document.getElementById('save-todo-btn');
 const modalTitle = document.getElementById('modal-title');
 const themeBtns = document.querySelectorAll('.theme-btn');
 const todoTooltip = document.getElementById('todo-tooltip'); 
+const datePickerModal = document.getElementById('date-picker-modal');
+const datePickerGrid = document.getElementById('date-picker-grid');
+const pickerMonthYear = document.getElementById('picker-month-year');
+const closePickerBtn = document.querySelector('.close-picker-btn');
 
 let currentDate = new Date();
 let selectedDate = new Date();
 selectedDate.setHours(0,0,0,0);
+let pickerDate = new Date();
 
 let todosData = loadFromStorage('todos') || {};
 let currentTheme = loadFromStorage('theme') || 'brown';
-let editingTodo = null; // {dateKey, index}
+let editingTodo = null;
 
 // 스토리지 함수
 function saveToStorage(key, value) {
@@ -47,51 +52,6 @@ function dateToKey(date){
 function getPriorityOrder(prio) { 
     const order = { high: 3, medium: 2, low: 1 };
     return order[prio] || 0;
-}
-
-// 통계 계산
-function calculateStats() {
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    
-    let streak = 0;
-    let checkDate = new Date(today);
-    let maxDays = 0;
-    
-    while(maxDays < 365) {
-        const key = dateToKey(checkDate);
-        const dayTodos = todosData[key] || [];
-        
-        if (dayTodos.length > 0 && dayTodos.every(t => t.completed)) {
-            streak++;
-        } else if (dayTodos.length === 0) {
-            if (streak > 0) break;
-        } else {
-            break;
-        }
-        
-        checkDate.setDate(checkDate.getDate() - 1);
-        maxDays++;
-    }
-
-    let totalCompleted = 0;
-    Object.values(todosData).forEach(todos => {
-        totalCompleted += todos.filter(t => t.completed).length;
-    });
-
-    const month = currentDate.getMonth();
-    const year = currentDate.getFullYear();
-    let monthTodos = 0;
-    Object.keys(todosData).forEach(key => {
-        const [y, m] = key.split('-').map(Number);
-        if (y === year && m === month + 1) {
-            monthTodos += todosData[key].length;
-        }
-    });
-
-    document.getElementById('streak-count').textContent = `${streak}일`;
-    document.getElementById('total-completed').textContent = `${totalCompleted}개`;
-    document.getElementById('month-todos').textContent = `${monthTodos}개`;
 }
 
 // 툴팁 표시 및 숨기기
@@ -168,7 +128,6 @@ function showTooltip(dateKey) {
                 }
                 
                 renderCalendar(currentDate);
-                calculateStats();
             });
 
             const actionsDiv = document.createElement('div');
@@ -204,7 +163,6 @@ function showTooltip(dateKey) {
                     saveToStorage('todos', todosData);
                     showTooltip(dateKey);
                     renderCalendar(currentDate);
-                    calculateStats();
                 }
             });
 
@@ -229,6 +187,53 @@ function showTooltip(dateKey) {
     
     document.getElementById('close-tooltip-btn').addEventListener('click', hideTooltip);
     todoTooltip.style.display = 'block';
+}
+
+// 날짜 선택기 렌더링
+function renderDatePicker() {
+    datePickerGrid.innerHTML = '';
+    
+    const month = pickerDate.getMonth();
+    const year = pickerDate.getFullYear();
+    pickerMonthYear.textContent = `${year}년 ${month + 1}월`;
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+    
+    daysOfWeek.forEach(day => {
+        const h = document.createElement('div');
+        h.className = 'picker-day-cell header';
+        h.textContent = day;
+        datePickerGrid.appendChild(h);
+    });
+    
+    for (let i = 0; i < firstDay; i++) {
+        const e = document.createElement('div');
+        e.className = 'picker-day-cell empty';
+        datePickerGrid.appendChild(e);
+    }
+    
+    for (let d = 1; d <= daysInMonth; d++) {
+        const cell = document.createElement('div');
+        cell.className = 'picker-day-cell';
+        cell.textContent = d;
+        
+        const cellDate = new Date(year, month, d);
+        const dayOfWeek = cellDate.getDay();
+        
+        if (dayOfWeek === 0) cell.classList.add('sunday');
+        if (dayOfWeek === 6) cell.classList.add('saturday');
+        
+        cell.addEventListener('click', () => {
+            currentDate = new Date(year, month, 1);
+            selectedDate = cellDate;
+            renderCalendar(currentDate);
+            datePickerModal.style.display = 'none';
+        });
+        
+        datePickerGrid.appendChild(cell);
+    }
 }
 
 // 캘린더 렌더링
@@ -305,8 +310,6 @@ function renderCalendar(date){
         
         calendarGrid.appendChild(cell);
     }
-
-    calculateStats();
 }
 
 // 전역 클릭 이벤트
@@ -341,6 +344,43 @@ document.getElementById('next-month').addEventListener('click',()=>{
     currentDate.setMonth(currentDate.getMonth()+1);
     renderCalendar(currentDate);
     hideTooltip();
+});
+
+// 날짜 선택기
+currentMonthYear.addEventListener('click', () => {
+    pickerDate = new Date(currentDate);
+    renderDatePicker();
+    datePickerModal.style.display = 'flex';
+});
+
+document.getElementById('prev-year').addEventListener('click', () => {
+    pickerDate.setFullYear(pickerDate.getFullYear() - 1);
+    renderDatePicker();
+});
+
+document.getElementById('prev-picker-month').addEventListener('click', () => {
+    pickerDate.setMonth(pickerDate.getMonth() - 1);
+    renderDatePicker();
+});
+
+document.getElementById('next-picker-month').addEventListener('click', () => {
+    pickerDate.setMonth(pickerDate.getMonth() + 1);
+    renderDatePicker();
+});
+
+document.getElementById('next-year').addEventListener('click', () => {
+    pickerDate.setFullYear(pickerDate.getFullYear() + 1);
+    renderDatePicker();
+});
+
+closePickerBtn.addEventListener('click', () => {
+    datePickerModal.style.display = 'none';
+});
+
+window.addEventListener('click', e => {
+    if (e.target == datePickerModal) {
+        datePickerModal.style.display = 'none';
+    }
 });
 
 // 모달
@@ -386,7 +426,6 @@ saveTodoBtn.addEventListener('click',()=>{
     }
 
     if (editingTodo) {
-        // 수정 모드
         const { dateKey, index } = editingTodo;
         todosData[dateKey][index] = {
             ...todosData[dateKey][index],
@@ -401,7 +440,6 @@ saveTodoBtn.addEventListener('click',()=>{
         renderCalendar(currentDate);
         showTooltip(dateKey);
     } else {
-        // 추가 모드
         if(!todosData[dateVal]) todosData[dateVal]=[];
         todosData[dateVal].push({
             text: textVal,
