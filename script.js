@@ -24,6 +24,8 @@ const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
 const importFile = document.getElementById('import-file');
 const closeSyncBtn = document.querySelector('.close-sync-btn');
+const themeSelector = document.getElementById('theme-selector');
+const themeOptions = document.getElementById('theme-options');
 
 let currentDate = new Date();
 let selectedDate = new Date();
@@ -255,7 +257,12 @@ function showTooltip(dateKey) {
         <h5>
             <span>${displayDate}</span>
             <div class="tooltip-header-actions">
-                <button id="add-from-tooltip-btn" title="할 일 추가">➕</button>
+                <button id="add-from-tooltip-btn" title="할 일 추가">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
                 <button id="close-tooltip-btn">✖</button>
             </div>
         </h5>
@@ -416,7 +423,7 @@ function showTooltip(dateKey) {
     // 팝업에서 할 일 추가 버튼
     document.getElementById('add-from-tooltip-btn').addEventListener('click', () => {
         editingTodo = null;
-        modalTitle.textContent = '새 할 일';
+        modalTitle.textContent = '할 일 추가';
         modal.style.display='flex'; 
         todoDateInput.value=dateKey;
         todoTextInput.value='';
@@ -441,7 +448,7 @@ function renderDatePicker() {
     
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const daysOfWeek = ['일', '월', '화', '수', '목', '금', '토'];
+    const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일'];
     
     daysOfWeek.forEach(day => {
         const h = document.createElement('div');
@@ -450,7 +457,10 @@ function renderDatePicker() {
         datePickerGrid.appendChild(h);
     });
     
-    for (let i = 0; i < firstDay; i++) {
+    // 월요일 시작으로 조정
+    const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+    
+    for (let i = 0; i < adjustedFirstDay; i++) {
         const e = document.createElement('div');
         e.className = 'picker-day-cell empty';
         datePickerGrid.appendChild(e);
@@ -487,7 +497,7 @@ function renderCalendar(date){
 
     const firstDay=new Date(year,month,1).getDay(); 
     const daysInMonth=new Date(year,month+1,0).getDate(); 
-    const daysOfWeek=['일','월','화','수','목','금','토'];
+    const daysOfWeek=['월','화','수','목','금','토','일'];
 
     daysOfWeek.forEach(day=>{
         const h=document.createElement('div');
@@ -496,15 +506,36 @@ function renderCalendar(date){
         calendarGrid.appendChild(h);
     });
 
-    for(let i=0;i<firstDay;i++){
-        const e=document.createElement('div');
-        e.className='day-cell empty';
-        calendarGrid.appendChild(e);
+    // 월요일 시작으로 조정 (일요일=0 -> 6으로 변환)
+    const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+    
+    // 이전 달 날짜 표시
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const prevMonthDays = new Date(prevYear, prevMonth + 1, 0).getDate();
+    
+    for(let i = adjustedFirstDay - 1; i >= 0; i--){
+        const day = prevMonthDays - i;
+        const cell = document.createElement('div');
+        cell.className = 'day-cell other-month';
+        cell.textContent = day;
+        
+        const cellDate = new Date(prevYear, prevMonth, day);
+        const dateKey = dateToKey(cellDate);
+        cell.dataset.date = dateKey;
+        
+        cell.addEventListener('click', () => {
+            currentDate = new Date(prevYear, prevMonth, 1);
+            selectedDate = cellDate;
+            renderCalendar(currentDate);
+        });
+        
+        calendarGrid.appendChild(cell);
     }
     
     // 남은 칸 계산 (6주 = 42칸)
     const totalCells = 42;
-    const usedCells = firstDay + daysInMonth;
+    const usedCells = adjustedFirstDay + daysInMonth;
     const emptyCellsAtEnd = totalCells - usedCells;
 
     const today=new Date();
@@ -522,6 +553,7 @@ function renderCalendar(date){
         cell.dataset.date=dateKey;
 
         const dayOfWeek=cellDate.getDay();
+        // 월요일(1)부터 시작하므로 일요일(0)은 7번째
         if(dayOfWeek===0) cell.classList.add('sunday'); 
         if(dayOfWeek===6) cell.classList.add('saturday'); 
 
@@ -605,11 +637,26 @@ function renderCalendar(date){
         calendarGrid.appendChild(cell);
     }
     
-    // 마지막 빈 칸 추가 (6주 고정)
-    for(let i=0;i<emptyCellsAtEnd;i++){
-        const e=document.createElement('div');
-        e.className='day-cell empty';
-        calendarGrid.appendChild(e);
+    // 다음 달 날짜 표시
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    
+    for(let i = 1; i <= emptyCellsAtEnd; i++){
+        const cell = document.createElement('div');
+        cell.className = 'day-cell other-month';
+        cell.textContent = i;
+        
+        const cellDate = new Date(nextYear, nextMonth, i);
+        const dateKey = dateToKey(cellDate);
+        cell.dataset.date = dateKey;
+        
+        cell.addEventListener('click', () => {
+            currentDate = new Date(nextYear, nextMonth, 1);
+            selectedDate = cellDate;
+            renderCalendar(currentDate);
+        });
+        
+        calendarGrid.appendChild(cell);
     }
     
     renderHabits();
@@ -652,15 +699,26 @@ exportBtn.addEventListener('click', () => {
     const dataStr = JSON.stringify(data, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+    
+    // 모바일/데스크톱 모두 지원
     const link = document.createElement('a');
     link.href = url;
     link.download = `todo-calendar-backup-${new Date().toISOString().split('T')[0]}.json`;
+    
+    // iOS Safari 지원
+    if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+        link.target = '_blank';
+    }
+    
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
     
-    alert('데이터를 내보냈습니다! 파일을 안전한 곳에 보관하세요.');
+    setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, 100);
+    
+    alert('데이터를 내보냈습니다!\n다운로드 폴더를 확인하세요.');
 });
 
 // 가져오기
@@ -694,33 +752,83 @@ importFile.addEventListener('change', (e) => {
                 document.body.classList.remove('white','black','pink','brown','sky','yellow','green');
                 document.body.classList.add(currentTheme);
                 
+                updateActiveTheme();
                 renderCalendar(currentDate);
                 renderHabits();
                 syncModal.style.display = 'none';
                 
-                alert('데이터를 가져왔습니다! 새로고침하면 적용됩니다.');
-                location.reload();
+                alert('데이터를 가져왔습니다!');
+                setTimeout(() => location.reload(), 500);
             }
         } catch (error) {
-            alert('파일을 읽는 중 오류가 발생했습니다.');
+            alert('파일을 읽는 중 오류가 발생했습니다.\n' + error.message);
             console.error(error);
         }
+        
+        importFile.value = '';
     };
+    
+    reader.onerror = () => {
+        alert('파일을 읽을 수 없습니다.');
+        importFile.value = '';
+    };
+    
     reader.readAsText(file);
-    importFile.value = '';
 });
 
 // 테마 버튼
-document.body.classList.add(currentTheme); 
+document.body.classList.add(currentTheme);
+
+// 현재 테마 버튼 표시
+function updateActiveTheme() {
+    const activeBtn = themeSelector.querySelector('.theme-btn.active');
+    activeBtn.dataset.theme = currentTheme;
+    activeBtn.className = `theme-btn active ${currentTheme}`;
+    
+    // 테마별 스타일 직접 적용
+    const themeColors = {
+        'white': 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
+        'black': 'linear-gradient(135deg, #3a3a3a 0%, #1f1f1f 100%)',
+        'pink': 'linear-gradient(135deg, #f5d5e5 0%, #e8c4d8 100%)',
+        'brown': 'linear-gradient(135deg, #c9b8a8 0%, #a8958a 100%)',
+        'sky': 'linear-gradient(135deg, #a8d8ea 0%, #7cb8d4 100%)',
+        'yellow': 'linear-gradient(135deg, #ffe082 0%, #ffd54f 100%)',
+        'green': 'linear-gradient(135deg, #aed581 0%, #9ccc65 100%)'
+    };
+    
+    activeBtn.style.background = themeColors[currentTheme];
+}
+
+updateActiveTheme();
+
+// 테마 선택기 토글
+themeSelector.addEventListener('click', (e) => {
+    if (e.target.closest('.theme-btn') && !e.target.closest('.theme-options')) {
+        const isOpen = themeOptions.style.display === 'flex';
+        themeOptions.style.display = isOpen ? 'none' : 'flex';
+    }
+});
+
+// 테마 선택
 themeBtns.forEach(btn=>{
-    btn.addEventListener('click',()=>{
+    btn.addEventListener('click',(e)=>{
+        e.stopPropagation();
         const theme = btn.dataset.theme;
         document.body.classList.remove('white','black','pink','brown','sky','yellow','green');
         document.body.classList.add(theme);
         currentTheme = theme;
         saveToStorage('theme', theme);
+        updateActiveTheme();
+        themeOptions.style.display = 'none';
         renderCalendar(currentDate); 
     });
+});
+
+// 테마 옵션 외부 클릭시 닫기
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#theme-selector')) {
+        themeOptions.style.display = 'none';
+    }
 });
 
 // 달력 이동
@@ -781,7 +889,7 @@ todoRepeatCheckbox.addEventListener('change', (e) => {
 // 모달
 addTodoBtn.addEventListener('click',()=>{
     editingTodo = null;
-    modalTitle.textContent = '새 할 일';
+    modalTitle.textContent = '할 일 추가';
     modal.style.display='flex'; 
     todoDateInput.value=dateToKey(selectedDate);
     todoTextInput.value='';
