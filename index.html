@@ -9,18 +9,21 @@
 <body>
     <div class="container">
         <!-- 테마 선택기 -->
-        <div class="theme-selector">
-            <button class="theme-btn" data-theme="white" title="화이트"></button>
-            <button class="theme-btn" data-theme="black" title="블랙"></button>
-            <button class="theme-btn" data-theme="pink" title="핑크"></button>
-            <button class="theme-btn" data-theme="brown" title="브라운"></button>
-            <button class="theme-btn" data-theme="sky" title="하늘"></button>
-            <button class="theme-btn" data-theme="yellow" title="노랑"></button>
-            <button class="theme-btn" data-theme="green" title="연두"></button>
+        <div class="theme-selector" id="theme-selector">
+            <button class="theme-btn active" data-theme="brown" title="브라운"></button>
+            <div class="theme-options" id="theme-options" style="display: none;">
+                <button class="theme-btn" data-theme="white" title="화이트"></button>
+                <button class="theme-btn" data-theme="black" title="블랙"></button>
+                <button class="theme-btn" data-theme="pink" title="핑크"></button>
+                <button class="theme-btn" data-theme="brown" title="브라운"></button>
+                <button class="theme-btn" data-theme="sky" title="하늘"></button>
+                <button class="theme-btn" data-theme="yellow" title="노랑"></button>
+                <button class="theme-btn" data-theme="green" title="연두"></button>
+            </div>
         </div>
 
         <div class="header">
-            <h1>To Do Calendar</h1>
+            <h1>To-Do Calendar</h1>
         </div>
 
         <div class="controls">
@@ -28,7 +31,13 @@
             <span id="current-month-year"></span>
             <button class="nav-btn" id="next-month">▶</button>
             <button id="add-todo-btn">+ 추가</button>
-            <button id="sync-btn" title="데이터 동기화">🔄</button>
+            <button id="sync-btn" title="데이터 동기화">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
         </div>
 
         <div class="calendar-container">
@@ -64,7 +73,7 @@
     <!-- 추가/수정 모달 -->
     <div id="add-todo-modal">
         <div class="modal-content">
-            <h3 id="modal-title">새 할 일</h3>
+            <h3 id="modal-title">할 일 추가</h3>
             <div class="form-group">
                 <label for="todo-date">날짜</label>
                 <input type="date" id="todo-date">
