@@ -6,7 +6,10 @@ const closeBtn = document.querySelector('.close-btn');
 const todoDateInput = document.getElementById('todo-date');
 const todoTextInput = document.getElementById('todo-text');
 const todoMemoInput = document.getElementById('todo-memo');
+const todoCategorySelect = document.getElementById('todo-category');
 const todoPrioritySelect = document.getElementById('todo-priority');
+const todoRepeatCheckbox = document.getElementById('todo-repeat');
+const repeatTypeSelect = document.getElementById('repeat-type');
 const saveTodoBtn = document.getElementById('save-todo-btn');
 const modalTitle = document.getElementById('modal-title');
 const themeBtns = document.querySelectorAll('.theme-btn');
@@ -24,6 +27,7 @@ let pickerDate = new Date();
 let todosData = loadFromStorage('todos') || {};
 let currentTheme = loadFromStorage('theme') || 'brown';
 let editingTodo = null;
+let draggedTodo = null;
 
 // 스토리지 함수
 function saveToStorage(key, value) {
@@ -50,8 +54,39 @@ function dateToKey(date){
 }
 
 function getPriorityOrder(prio) { 
-    const order = { high: 3, medium: 2, low: 1 };
+    const order = { high: 3, medium: 2, low: 1, none: 0 };
     return order[prio] || 0;
+}
+
+// 반복 일정 생성
+function createRepeatTodos(baseDate, todo, repeatType) {
+    const endDate = new Date(baseDate);
+    endDate.setMonth(endDate.getMonth() + 3); // 3개월치 생성
+    
+    let currentDateIter = new Date(baseDate);
+    currentDateIter.setDate(currentDateIter.getDate() + 1);
+    
+    while (currentDateIter <= endDate) {
+        const key = dateToKey(currentDateIter);
+        if (!todosData[key]) todosData[key] = [];
+        
+        // 중복 체크
+        const isDuplicate = todosData[key].some(t => 
+            t.text === todo.text && t.repeatId === todo.repeatId
+        );
+        
+        if (!isDuplicate) {
+            todosData[key].push({...todo});
+        }
+        
+        if (repeatType === 'daily') {
+            currentDateIter.setDate(currentDateIter.getDate() + 1);
+        } else if (repeatType === 'weekly') {
+            currentDateIter.setDate(currentDateIter.getDate() + 7);
+        } else if (repeatType === 'monthly') {
+            currentDateIter.setMonth(currentDateIter.getMonth() + 1);
+        }
+    }
 }
 
 // 툴팁 표시 및 숨기기
@@ -86,6 +121,21 @@ function showTooltip(dateKey) {
         
         dayTodos.forEach((todo, index) => {
             const li = document.createElement('li');
+            li.className = todo.category;
+            li.draggable = true;
+            li.dataset.index = index;
+            
+            // 드래그 이벤트
+            li.addEventListener('dragstart', (e) => {
+                draggedTodo = { fromDateKey: dateKey, index: index, todo: {...todo} };
+                li.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            
+            li.addEventListener('dragend', () => {
+                li.classList.remove('dragging');
+            });
+            
             const infoDiv = document.createElement('div');
             infoDiv.className = 'todo-info';
 
@@ -138,13 +188,17 @@ function showTooltip(dateKey) {
             editBtn.className = 'edit-btn';
             editBtn.title = '수정';
             
-            editBtn.addEventListener('click', () => {
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 editingTodo = { dateKey, index };
                 modalTitle.textContent = '할 일 수정';
                 todoDateInput.value = dateKey;
                 todoTextInput.value = todo.text;
                 todoMemoInput.value = todo.memo || '';
-                todoPrioritySelect.value = todo.priority;
+                todoCategorySelect.value = todo.category || 'etc';
+                todoPrioritySelect.value = todo.priority || 'none';
+                todoRepeatCheckbox.checked = false;
+                repeatTypeSelect.style.display = 'none';
                 modal.style.display = 'flex';
                 todoTextInput.focus();
             });
@@ -154,7 +208,8 @@ function showTooltip(dateKey) {
             deleteBtn.className = 'delete-btn';
             deleteBtn.title = '삭제';
             
-            deleteBtn.addEventListener('click', () => {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 if (confirm('이 할 일을 삭제하시겠습니까?')) {
                     todosData[dateKey].splice(index, 1);
                     if (todosData[dateKey].length === 0) {
@@ -281,6 +336,44 @@ function renderCalendar(date){
         if(todayKey===dateKey) cell.classList.add('today');
         if(dateToKey(selectedDate)===dateKey) cell.classList.add('selected');
 
+        // 드래그 오버 이벤트
+        cell.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!cell.classList.contains('empty') && !cell.classList.contains('header')) {
+                cell.style.background = '#d1ecf1';
+            }
+        });
+        
+        cell.addEventListener('dragleave', () => {
+            cell.style.background = '';
+        });
+        
+        cell.addEventListener('drop', (e) => {
+            e.preventDefault();
+            cell.style.background = '';
+            
+            if (draggedTodo && !cell.classList.contains('empty') && !cell.classList.contains('header')) {
+                const toDateKey = cell.dataset.date;
+                const { fromDateKey, index, todo } = draggedTodo;
+                
+                // 원래 날짜에서 제거
+                todosData[fromDateKey].splice(index, 1);
+                if (todosData[fromDateKey].length === 0) {
+                    delete todosData[fromDateKey];
+                }
+                
+                // 새 날짜에 추가
+                if (!todosData[toDateKey]) todosData[toDateKey] = [];
+                todosData[toDateKey].push(todo);
+                
+                saveToStorage('todos', todosData);
+                renderCalendar(currentDate);
+                hideTooltip();
+                draggedTodo = null;
+            }
+        });
+
         if(todosData[dateKey] && todosData[dateKey].length > 0){
             const allCompleted = todosData[dateKey].every(t => t.completed);
             const hasIncomplete = todosData[dateKey].some(todo => !todo.completed);
@@ -293,9 +386,18 @@ function renderCalendar(date){
             }
             
             if (hasIncomplete) {
-                const dot=document.createElement('div');
-                dot.className='todo-dot';
-                cell.appendChild(dot);
+                // 카테고리별 점 표시
+                const categories = [...new Set(todosData[dateKey].map(t => t.category))];
+                const dotsContainer = document.createElement('div');
+                dotsContainer.className = 'category-dots';
+                
+                categories.slice(0, 3).forEach(cat => {
+                    const dot = document.createElement('div');
+                    dot.className = `category-dot ${cat}`;
+                    dotsContainer.appendChild(dot);
+                });
+                
+                cell.appendChild(dotsContainer);
             }
         }
 
@@ -383,6 +485,11 @@ window.addEventListener('click', e => {
     }
 });
 
+// 반복 일정 체크박스
+todoRepeatCheckbox.addEventListener('change', (e) => {
+    repeatTypeSelect.style.display = e.target.checked ? 'block' : 'none';
+});
+
 // 모달
 addTodoBtn.addEventListener('click',()=>{
     editingTodo = null;
@@ -391,7 +498,10 @@ addTodoBtn.addEventListener('click',()=>{
     todoDateInput.value=dateToKey(selectedDate);
     todoTextInput.value='';
     todoMemoInput.value='';
-    todoPrioritySelect.value='medium';
+    todoCategorySelect.value='etc';
+    todoPrioritySelect.value='none';
+    todoRepeatCheckbox.checked = false;
+    repeatTypeSelect.style.display = 'none';
     todoTextInput.focus();
 });
 closeBtn.addEventListener('click',()=>{
@@ -418,7 +528,10 @@ saveTodoBtn.addEventListener('click',()=>{
     const dateVal=todoDateInput.value;
     const textVal=todoTextInput.value.trim();
     const memoVal=todoMemoInput.value.trim();
+    const category=todoCategorySelect.value;
     const prio=todoPrioritySelect.value;
+    const isRepeat = todoRepeatCheckbox.checked;
+    const repeatType = repeatTypeSelect.value;
     
     if(!dateVal || textVal===''){ 
         alert('날짜와 제목을 입력해주세요.'); 
@@ -431,6 +544,7 @@ saveTodoBtn.addEventListener('click',()=>{
             ...todosData[dateKey][index],
             text: textVal,
             memo: memoVal,
+            category: category,
             priority: prio
         };
         saveToStorage('todos', todosData);
@@ -440,13 +554,27 @@ saveTodoBtn.addEventListener('click',()=>{
         renderCalendar(currentDate);
         showTooltip(dateKey);
     } else {
-        if(!todosData[dateVal]) todosData[dateVal]=[];
-        todosData[dateVal].push({
+        const newTodo = {
             text: textVal,
             memo: memoVal,
+            category: category,
             priority: prio,
             completed: false
-        });
+        };
+        
+        if (isRepeat) {
+            newTodo.repeatId = Date.now();
+            newTodo.repeatType = repeatType;
+        }
+        
+        if(!todosData[dateVal]) todosData[dateVal]=[];
+        todosData[dateVal].push(newTodo);
+        
+        // 반복 일정 생성
+        if (isRepeat) {
+            createRepeatTodos(new Date(dateVal), newTodo, repeatType);
+        }
+        
         saveToStorage('todos', todosData);
         modal.style.display='none';
         
