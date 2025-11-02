@@ -60,6 +60,35 @@ function getPriorityOrder(prio) {
 }
 
 // 반복 일정 생성 제거 - 습관으로 관리
+function getWeeklyGoal(repeatType) {
+    const goals = {
+        'daily': 7,
+        '6times': 6,
+        '5times': 5,
+        '4times': 4,
+        '3times': 3,
+        '2times': 2,
+        'weekly': 1
+    };
+    return goals[repeatType] || 7;
+}
+
+function getWeekDates() {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
+    monday.setHours(0, 0, 0, 0);
+    
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        dates.push(dateToKey(date));
+    }
+    return dates;
+}
+
 function renderHabits() {
     const habitList = document.getElementById('habit-list');
     const habitTracker = document.getElementById('habit-tracker');
@@ -73,6 +102,7 @@ function renderHabits() {
     habitList.innerHTML = '';
     
     const todayKey = dateToKey(new Date());
+    const weekDates = getWeekDates();
     
     habitsData.forEach((habit, index) => {
         const item = document.createElement('div');
@@ -109,6 +139,34 @@ function renderHabits() {
         infoDiv.appendChild(checkbox);
         infoDiv.appendChild(textSpan);
         
+        // 주간 진행률
+        const weeklyGoal = getWeeklyGoal(habit.repeatType);
+        const weeklyCompleted = weekDates.filter(date => 
+            habit.completedDates && habit.completedDates.includes(date)
+        ).length;
+        const progress = Math.min((weeklyCompleted / weeklyGoal) * 100, 100);
+        
+        const progressDiv = document.createElement('div');
+        progressDiv.className = 'habit-progress';
+        
+        const progressText = document.createElement('div');
+        progressText.className = 'progress-text';
+        progressText.textContent = `${weeklyCompleted}/${weeklyGoal}`;
+        
+        const progressBar = document.createElement('div');
+        progressBar.className = 'progress-bar';
+        
+        const progressFill = document.createElement('div');
+        progressFill.className = 'progress-fill';
+        if (weeklyCompleted >= weeklyGoal) {
+            progressFill.classList.add('complete');
+        }
+        progressFill.style.width = `${progress}%`;
+        
+        progressBar.appendChild(progressFill);
+        progressDiv.appendChild(progressText);
+        progressDiv.appendChild(progressBar);
+        
         // 연속 기록 계산
         let streak = 0;
         let checkDate = new Date();
@@ -126,7 +184,7 @@ function renderHabits() {
         
         const streakSpan = document.createElement('div');
         streakSpan.className = 'habit-streak';
-        streakSpan.textContent = `🔥 ${streak}일`;
+        streakSpan.textContent = `🔥 ${streak}`;
         
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'habit-actions';
@@ -136,20 +194,30 @@ function renderHabits() {
         deleteBtn.textContent = '🗑️';
         deleteBtn.title = '삭제';
         
-        deleteBtn.addEventListener('click', (e) => {
+        // 더 강력한 삭제 이벤트
+        deleteBtn.onmousedown = function(e) {
             e.preventDefault();
             e.stopPropagation();
+            return false;
+        };
+        
+        deleteBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             if (confirm('이 습관을 삭제하시겠습니까?')) {
                 habitsData.splice(index, 1);
                 saveToStorage('habits', habitsData);
                 renderHabits();
                 renderCalendar(currentDate);
             }
-        });
+            return false;
+        };
         
         actionsDiv.appendChild(deleteBtn);
         
         item.appendChild(infoDiv);
+        item.appendChild(progressDiv);
         item.appendChild(streakSpan);
         item.appendChild(actionsDiv);
         habitList.appendChild(item);
@@ -265,7 +333,7 @@ function showTooltip(dateKey) {
                 todoCategorySelect.value = todo.category || 'etc';
                 todoPrioritySelect.value = todo.priority || 'none';
                 todoRepeatCheckbox.checked = false;
-                repeatTypeSelect.style.display = 'none';
+                repeatOptions.style.display = 'none';
                 modal.style.display = 'flex';
                 todoTextInput.focus();
             });
@@ -275,7 +343,14 @@ function showTooltip(dateKey) {
             deleteBtn.className = 'delete-btn';
             deleteBtn.title = '삭제';
             
-            deleteBtn.addEventListener('click', (e) => {
+            // 더 강력한 삭제 이벤트 처리
+            deleteBtn.onmousedown = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            };
+            
+            deleteBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 
@@ -298,7 +373,7 @@ function showTooltip(dateKey) {
                 }
                 
                 return false;
-            });
+            };
 
             infoDiv.appendChild(checkbox);
             infoDiv.appendChild(contentDiv);
@@ -579,8 +654,9 @@ window.addEventListener('click', e => {
 });
 
 // 반복 일정 체크박스
+const repeatOptions = document.getElementById('repeat-options');
 todoRepeatCheckbox.addEventListener('change', (e) => {
-    repeatTypeSelect.style.display = e.target.checked ? 'block' : 'none';
+    repeatOptions.style.display = e.target.checked ? 'block' : 'none';
 });
 
 // 모달
@@ -594,7 +670,7 @@ addTodoBtn.addEventListener('click',()=>{
     todoCategorySelect.value='etc';
     todoPrioritySelect.value='none';
     todoRepeatCheckbox.checked = false;
-    repeatTypeSelect.style.display = 'none';
+    repeatOptions.style.display = 'none';
     todoTextInput.focus();
 });
 closeBtn.addEventListener('click',()=>{
