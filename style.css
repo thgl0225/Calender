@@ -716,18 +716,51 @@ body.white #save-todo-btn { color: #333; }
     align-items: center;
     gap: 6px;
     flex: 1;
+    min-width: 0;
 }
 
 .habit-check {
     width: 16px;
     height: 16px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .habit-text {
     font-size: 10px;
     font-weight: 600;
     color: #2d3748;
+    flex: 1;
+}
+
+.habit-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 60px;
+}
+
+.progress-text {
+    font-size: 8px;
+    color: #718096;
+    text-align: right;
+}
+
+.progress-bar {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    transition: width 0.3s ease;
+}
+
+.progress-fill.complete {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .habit-streak {
@@ -736,6 +769,7 @@ body.white #save-todo-btn { color: #333; }
     background: #f8f9fa;
     padding: 2px 6px;
     border-radius: 10px;
+    white-space: nowrap;
 }
 
 .habit-actions {
