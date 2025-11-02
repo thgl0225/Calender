@@ -73,22 +73,35 @@ body {
 /* 테마 선택기 */
 .theme-selector {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    display: flex;
-    gap: 2px;
+    top: 6px;
+    right: 6px;
     z-index: 10;
-    opacity: 0.15;
+}
+
+.theme-selector .theme-btn.active {
+    opacity: 0.3;
     transition: opacity 0.3s ease;
 }
 
-.theme-selector:hover {
+.theme-selector:hover .theme-btn.active {
     opacity: 1;
 }
 
+.theme-options {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    gap: 3px;
+    background: white;
+    padding: 4px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 .theme-btn {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.5);
     cursor: pointer;
@@ -232,6 +245,13 @@ body.white #add-todo-btn { color: #333; }
     cursor: default;
 }
 
+.day-cell.other-month {
+    background: transparent;
+    color: #d0d0d0;
+    cursor: pointer;
+    font-weight: 400;
+}
+
 .day-cell:not(.header):not(.empty):hover {
     background: #e9ecef;
     transform: scale(1.05);
@@ -340,13 +360,21 @@ body.green .day-cell.today.selected { color: #558b2f; }
     padding: 2px 6px;
     border-radius: 4px;
     transition: all 0.2s ease;
-    font-size: 14px;
+    font-size: 12px;
     color: var(--theme-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #add-from-tooltip-btn:hover {
     background: #f8f9fa;
     transform: scale(1.1);
+}
+
+#add-from-tooltip-btn svg {
+    width: 14px;
+    height: 14px;
 }
 
 #todo-tooltip ul {
@@ -649,30 +677,34 @@ body.green .day-cell.today.selected { color: #558b2f; }
 .form-group textarea {
     width: 100%;
     padding: 6px;
-    border: 2px solid #f0f0f0;
+    border: none;
     background: #fafafa;
     border-radius: 8px;
     font-size: 11px;
     font-family: inherit;
     transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .form-group select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ccc' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-color: #fafafa;
     padding-right: 28px;
 }
 
+.form-group select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: var(--theme-primary);
     background: white;
-    box-shadow: 0 0 0 3px rgba(201, 184, 168, 0.08);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 3px rgba(201, 184, 168, 0.08);
     transform: translateY(-1px);
 }
 
