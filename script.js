@@ -25,6 +25,7 @@ selectedDate.setHours(0,0,0,0);
 let pickerDate = new Date();
 
 let todosData = loadFromStorage('todos') || {};
+let habitsData = loadFromStorage('habits') || [];
 let currentTheme = loadFromStorage('theme') || 'brown';
 let editingTodo = null;
 let draggedTodo = null;
@@ -58,35 +59,101 @@ function getPriorityOrder(prio) {
     return order[prio] || 0;
 }
 
-// 반복 일정 생성
-function createRepeatTodos(baseDate, todo, repeatType) {
-    const endDate = new Date(baseDate);
-    endDate.setMonth(endDate.getMonth() + 3); // 3개월치 생성
+// 반복 일정 생성 제거 - 습관으로 관리
+function renderHabits() {
+    const habitList = document.getElementById('habit-list');
+    const habitTracker = document.getElementById('habit-tracker');
     
-    let currentDateIter = new Date(baseDate);
-    currentDateIter.setDate(currentDateIter.getDate() + 1);
-    
-    while (currentDateIter <= endDate) {
-        const key = dateToKey(currentDateIter);
-        if (!todosData[key]) todosData[key] = [];
-        
-        // 중복 체크
-        const isDuplicate = todosData[key].some(t => 
-            t.text === todo.text && t.repeatId === todo.repeatId
-        );
-        
-        if (!isDuplicate) {
-            todosData[key].push({...todo});
-        }
-        
-        if (repeatType === 'daily') {
-            currentDateIter.setDate(currentDateIter.getDate() + 1);
-        } else if (repeatType === 'weekly') {
-            currentDateIter.setDate(currentDateIter.getDate() + 7);
-        } else if (repeatType === 'monthly') {
-            currentDateIter.setMonth(currentDateIter.getMonth() + 1);
-        }
+    if (habitsData.length === 0) {
+        habitTracker.style.display = 'none';
+        return;
     }
+    
+    habitTracker.style.display = 'block';
+    habitList.innerHTML = '';
+    
+    const todayKey = dateToKey(new Date());
+    
+    habitsData.forEach((habit, index) => {
+        const item = document.createElement('div');
+        item.className = `habit-item ${habit.category}`;
+        
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'habit-info';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'habit-check';
+        checkbox.checked = habit.completedDates && habit.completedDates.includes(todayKey);
+        
+        checkbox.addEventListener('change', (e) => {
+            if (!habit.completedDates) habit.completedDates = [];
+            
+            if (e.target.checked) {
+                if (!habit.completedDates.includes(todayKey)) {
+                    habit.completedDates.push(todayKey);
+                }
+            } else {
+                habit.completedDates = habit.completedDates.filter(d => d !== todayKey);
+            }
+            
+            saveToStorage('habits', habitsData);
+            renderHabits();
+            renderCalendar(currentDate);
+        });
+        
+        const textSpan = document.createElement('div');
+        textSpan.className = 'habit-text';
+        textSpan.textContent = habit.text;
+        
+        infoDiv.appendChild(checkbox);
+        infoDiv.appendChild(textSpan);
+        
+        // 연속 기록 계산
+        let streak = 0;
+        let checkDate = new Date();
+        checkDate.setHours(0,0,0,0);
+        
+        while (streak < 365) {
+            const key = dateToKey(checkDate);
+            if (habit.completedDates && habit.completedDates.includes(key)) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+        
+        const streakSpan = document.createElement('div');
+        streakSpan.className = 'habit-streak';
+        streakSpan.textContent = `🔥 ${streak}일`;
+        
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'habit-actions';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'habit-delete';
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.title = '삭제';
+        
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm('이 습관을 삭제하시겠습니까?')) {
+                habitsData.splice(index, 1);
+                saveToStorage('habits', habitsData);
+                renderHabits();
+                renderCalendar(currentDate);
+            }
+        });
+        
+        actionsDiv.appendChild(deleteBtn);
+        
+        item.appendChild(infoDiv);
+        item.appendChild(streakSpan);
+        item.appendChild(actionsDiv);
+        habitList.appendChild(item);
+    });
 }
 
 // 툴팁 표시 및 숨기기
@@ -209,16 +276,28 @@ function showTooltip(dateKey) {
             deleteBtn.title = '삭제';
             
             deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                if (confirm('이 할 일을 삭제하시겠습니까?')) {
+                
+                const confirmed = confirm('이 할 일을 삭제하시겠습니까?');
+                if (confirmed) {
                     todosData[dateKey].splice(index, 1);
                     if (todosData[dateKey].length === 0) {
                         delete todosData[dateKey];
                     }
                     saveToStorage('todos', todosData);
-                    showTooltip(dateKey);
+                    
+                    // 팝업 재렌더링
+                    if (todosData[dateKey] && todosData[dateKey].length > 0) {
+                        showTooltip(dateKey);
+                    } else {
+                        hideTooltip();
+                    }
+                    
                     renderCalendar(currentDate);
                 }
+                
+                return false;
             });
 
             infoDiv.appendChild(checkbox);
@@ -314,6 +393,11 @@ function renderCalendar(date){
         e.className='day-cell empty';
         calendarGrid.appendChild(e);
     }
+    
+    // 남은 칸 계산 (6주 = 42칸)
+    const totalCells = 42;
+    const usedCells = firstDay + daysInMonth;
+    const emptyCellsAtEnd = totalCells - usedCells;
 
     const today=new Date();
     today.setHours(0,0,0,0);
@@ -412,6 +496,15 @@ function renderCalendar(date){
         
         calendarGrid.appendChild(cell);
     }
+    
+    // 마지막 빈 칸 추가 (6주 고정)
+    for(let i=0;i<emptyCellsAtEnd;i++){
+        const e=document.createElement('div');
+        e.className='day-cell empty';
+        calendarGrid.appendChild(e);
+    }
+    
+    renderHabits();
 }
 
 // 전역 클릭 이벤트
@@ -554,41 +647,49 @@ saveTodoBtn.addEventListener('click',()=>{
         renderCalendar(currentDate);
         showTooltip(dateKey);
     } else {
-        const newTodo = {
-            text: textVal,
-            memo: memoVal,
-            category: category,
-            priority: prio,
-            completed: false
-        };
-        
         if (isRepeat) {
-            newTodo.repeatId = Date.now();
-            newTodo.repeatType = repeatType;
-        }
-        
-        if(!todosData[dateVal]) todosData[dateVal]=[];
-        todosData[dateVal].push(newTodo);
-        
-        // 반복 일정 생성
-        if (isRepeat) {
-            createRepeatTodos(new Date(dateVal), newTodo, repeatType);
-        }
-        
-        saveToStorage('todos', todosData);
-        modal.style.display='none';
-        
-        const [y, m] = dateVal.split('-').map(Number);
-        if (y === currentDate.getFullYear() && m === currentDate.getMonth() + 1) {
+            // 습관으로 추가
+            const newHabit = {
+                text: textVal,
+                category: category,
+                repeatType: repeatType,
+                completedDates: []
+            };
+            
+            habitsData.push(newHabit);
+            saveToStorage('habits', habitsData);
+            modal.style.display='none';
+            
+            renderHabits();
             renderCalendar(currentDate);
-            if (dateVal === dateToKey(selectedDate)) {
+        } else {
+            // 일반 할 일로 추가
+            const newTodo = {
+                text: textVal,
+                memo: memoVal,
+                category: category,
+                priority: prio,
+                completed: false
+            };
+            
+            if(!todosData[dateVal]) todosData[dateVal]=[];
+            todosData[dateVal].push(newTodo);
+            
+            saveToStorage('todos', todosData);
+            modal.style.display='none';
+            
+            const [y, m] = dateVal.split('-').map(Number);
+            if (y === currentDate.getFullYear() && m === currentDate.getMonth() + 1) {
+                renderCalendar(currentDate);
+                if (dateVal === dateToKey(selectedDate)) {
+                    showTooltip(dateVal);
+                }
+            } else {
+                currentDate = new Date(y, m - 1, 1);
+                selectedDate = new Date(dateVal);
+                renderCalendar(currentDate);
                 showTooltip(dateVal);
             }
-        } else {
-            currentDate = new Date(y, m - 1, 1);
-            selectedDate = new Date(dateVal);
-            renderCalendar(currentDate);
-            showTooltip(dateVal);
         }
     }
 });
