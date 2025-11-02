@@ -18,6 +18,12 @@ const datePickerModal = document.getElementById('date-picker-modal');
 const datePickerGrid = document.getElementById('date-picker-grid');
 const pickerMonthYear = document.getElementById('picker-month-year');
 const closePickerBtn = document.querySelector('.close-picker-btn');
+const syncBtn = document.getElementById('sync-btn');
+const syncModal = document.getElementById('sync-modal');
+const exportBtn = document.getElementById('export-btn');
+const importBtn = document.getElementById('import-btn');
+const importFile = document.getElementById('import-file');
+const closeSyncBtn = document.querySelector('.close-sync-btn');
 
 let currentDate = new Date();
 let selectedDate = new Date();
@@ -193,24 +199,28 @@ function renderHabits() {
         deleteBtn.className = 'habit-delete';
         deleteBtn.textContent = '🗑️';
         deleteBtn.title = '삭제';
+        deleteBtn.setAttribute('data-action', 'delete-habit');
+        deleteBtn.setAttribute('data-index', index);
         
-        // 더 강력한 삭제 이벤트
-        deleteBtn.onmousedown = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        };
-        
-        deleteBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        // 직접 처리
+        deleteBtn.onmouseup = function(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            evt.stopImmediatePropagation();
             
-            if (confirm('이 습관을 삭제하시겠습니까?')) {
-                habitsData.splice(index, 1);
-                saveToStorage('habits', habitsData);
+            const idx = parseInt(this.getAttribute('data-index'));
+            
+            if (window.confirm('이 습관을 삭제하시겠습니까?')) {
+                const habits = loadFromStorage('habits') || [];
+                habits.splice(idx, 1);
+                saveToStorage('habits', habits);
+                habitsData = habits;
+                
+                // 즉시 재렌더링
                 renderHabits();
                 renderCalendar(currentDate);
             }
+            
             return false;
         };
         
@@ -244,7 +254,10 @@ function showTooltip(dateKey) {
     todoTooltip.innerHTML = `
         <h5>
             <span>${displayDate}</span>
-            <button id="close-tooltip-btn">✖</button>
+            <div class="tooltip-header-actions">
+                <button id="add-from-tooltip-btn" title="할 일 추가">➕</button>
+                <button id="close-tooltip-btn">✖</button>
+            </div>
         </h5>
     `;
     todoTooltip.dataset.date = dateKey;
@@ -342,34 +355,38 @@ function showTooltip(dateKey) {
             deleteBtn.textContent = '🗑️';
             deleteBtn.className = 'delete-btn';
             deleteBtn.title = '삭제';
+            deleteBtn.setAttribute('data-action', 'delete');
+            deleteBtn.setAttribute('data-datekey', dateKey);
+            deleteBtn.setAttribute('data-index', index);
             
-            // 더 강력한 삭제 이벤트 처리
-            deleteBtn.onmousedown = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            };
-            
-            deleteBtn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            // 직접 처리 (이벤트 리스너 없이)
+            deleteBtn.onmouseup = function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                evt.stopImmediatePropagation();
                 
-                const confirmed = confirm('이 할 일을 삭제하시겠습니까?');
-                if (confirmed) {
-                    todosData[dateKey].splice(index, 1);
-                    if (todosData[dateKey].length === 0) {
-                        delete todosData[dateKey];
+                const dk = this.getAttribute('data-datekey');
+                const idx = parseInt(this.getAttribute('data-index'));
+                
+                if (window.confirm('이 할 일을 삭제하시겠습니까?')) {
+                    const todos = loadFromStorage('todos') || {};
+                    if (todos[dk] && todos[dk][idx]) {
+                        todos[dk].splice(idx, 1);
+                        if (todos[dk].length === 0) {
+                            delete todos[dk];
+                        }
+                        saveToStorage('todos', todos);
+                        todosData = todos;
+                        
+                        // 즉시 재렌더링
+                        renderCalendar(currentDate);
+                        
+                        if (todos[dk] && todos[dk].length > 0) {
+                            setTimeout(() => showTooltip(dk), 50);
+                        } else {
+                            hideTooltip();
+                        }
                     }
-                    saveToStorage('todos', todosData);
-                    
-                    // 팝업 재렌더링
-                    if (todosData[dateKey] && todosData[dateKey].length > 0) {
-                        showTooltip(dateKey);
-                    } else {
-                        hideTooltip();
-                    }
-                    
-                    renderCalendar(currentDate);
                 }
                 
                 return false;
@@ -395,6 +412,22 @@ function showTooltip(dateKey) {
     }
     
     document.getElementById('close-tooltip-btn').addEventListener('click', hideTooltip);
+    
+    // 팝업에서 할 일 추가 버튼
+    document.getElementById('add-from-tooltip-btn').addEventListener('click', () => {
+        editingTodo = null;
+        modalTitle.textContent = '새 할 일';
+        modal.style.display='flex'; 
+        todoDateInput.value=dateKey;
+        todoTextInput.value='';
+        todoMemoInput.value='';
+        todoCategorySelect.value='etc';
+        todoPrioritySelect.value='none';
+        todoRepeatCheckbox.checked = false;
+        repeatOptions.style.display = 'none';
+        todoTextInput.focus();
+    });
+    
     todoTooltip.style.display = 'block';
 }
 
@@ -591,12 +624,98 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// 동기화 기능
+syncBtn.addEventListener('click', () => {
+    syncModal.style.display = 'flex';
+});
+
+closeSyncBtn.addEventListener('click', () => {
+    syncModal.style.display = 'none';
+});
+
+window.addEventListener('click', e => {
+    if (e.target == syncModal) {
+        syncModal.style.display = 'none';
+    }
+});
+
+// 내보내기
+exportBtn.addEventListener('click', () => {
+    const data = {
+        todos: todosData,
+        habits: habitsData,
+        theme: currentTheme,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `todo-calendar-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('데이터를 내보냈습니다! 파일을 안전한 곳에 보관하세요.');
+});
+
+// 가져오기
+importBtn.addEventListener('click', () => {
+    importFile.click();
+});
+
+importFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            
+            if (!data.todos || !data.version) {
+                alert('올바른 백업 파일이 아닙니다.');
+                return;
+            }
+            
+            if (confirm('현재 데이터를 덮어쓰시겠습니까?\n기존 데이터는 삭제됩니다!')) {
+                todosData = data.todos || {};
+                habitsData = data.habits || [];
+                currentTheme = data.theme || 'brown';
+                
+                saveToStorage('todos', todosData);
+                saveToStorage('habits', habitsData);
+                saveToStorage('theme', currentTheme);
+                
+                document.body.classList.remove('white','black','pink','brown','sky','yellow','green');
+                document.body.classList.add(currentTheme);
+                
+                renderCalendar(currentDate);
+                renderHabits();
+                syncModal.style.display = 'none';
+                
+                alert('데이터를 가져왔습니다! 새로고침하면 적용됩니다.');
+                location.reload();
+            }
+        } catch (error) {
+            alert('파일을 읽는 중 오류가 발생했습니다.');
+            console.error(error);
+        }
+    };
+    reader.readAsText(file);
+    importFile.value = '';
+});
+
 // 테마 버튼
 document.body.classList.add(currentTheme); 
 themeBtns.forEach(btn=>{
     btn.addEventListener('click',()=>{
         const theme = btn.dataset.theme;
-        document.body.classList.remove('white','black','pink','brown');
+        document.body.classList.remove('white','black','pink','brown','sky','yellow','green');
         document.body.classList.add(theme);
         currentTheme = theme;
         saveToStorage('theme', theme);
