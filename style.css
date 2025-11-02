@@ -178,10 +178,11 @@ body.white #add-todo-btn { color: #333; }
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 2px;
+    height: 240px; /* 고정 높이 */
+    grid-template-rows: auto repeat(6, 1fr); /* 헤더 + 6주 */
 }
 
 .day-cell {
-    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -201,8 +202,6 @@ body.white #add-todo-btn { color: #333; }
     font-weight: 700;
     color: #718096;
     font-size: 7px;
-    aspect-ratio: auto;
-    height: 14px;
 }
 
 .day-cell.empty {
@@ -676,6 +675,89 @@ body.white #save-todo-btn { color: #333; }
     border-radius: 10px;
 }
 
+/* 습관 트래커 */
+.habit-tracker {
+    padding: 8px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.habit-tracker h3 {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 6px;
+}
+
+#habit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.habit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 5px;
+    border-left: 3px solid transparent;
+}
+
+.habit-item.work { border-left-color: #4a90e2; }
+.habit-item.study { border-left-color: #f39c12; }
+.habit-item.exercise { border-left-color: #e74c3c; }
+.habit-item.personal { border-left-color: #9b59b6; }
+.habit-item.etc { border-left-color: #95a5a6; }
+
+.habit-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.habit-check {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.habit-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.habit-streak {
+    font-size: 9px;
+    color: #718096;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.habit-actions {
+    display: flex;
+    gap: 2px;
+}
+
+.habit-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 11px;
+}
+
+.habit-delete:hover {
+    background: #ffebee;
+    color: #e74c3c;
+}
+
 /* 반응형 */
 @media (max-width: 400px) {
     body {
@@ -685,5 +767,9 @@ body.white #save-todo-btn { color: #333; }
     .container {
         max-width: 100%;
         border-radius: 6px;
+    }
+    
+    #calendar-grid {
+        height: 220px;
     }
 }
